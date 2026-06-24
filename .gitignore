@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Data — keep the repo light; data is re-downloadable from cBioPortal via src/fetch_data.py
+data/raw/
+data/processed/
+*.tar.gz
+
+# Notebook checkpoints / OS cruft
+.ipynb_checkpoints/
+.DS_Store
+
+# Keep figures (small) so the repo shows results
+!results/figures/

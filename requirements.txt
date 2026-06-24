@@ -1,0 +1,15 @@
+# --- Core data stack (Week 1, installs fast, pure wheels) ---
+pandas>=2.0
+numpy>=1.24
+requests>=2.31
+matplotlib>=3.7
+seaborn>=0.13
+scikit-learn>=1.3
+
+# --- Survival modeling + interpretability (Week 2+) ---
+# lifelines is pure-Python and works great on Python 3.9 — our primary survival tool.
+lifelines>=0.27
+shap>=0.44
+# scikit-survival adds Random Survival Forest (optional; needs a compiler / Python 3.10+
+# for newest versions — if it won't install, lifelines covers the primary analyses).
+scikit-survival>=0.17

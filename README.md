@@ -7,6 +7,8 @@ them beats either one alone**. Validated across independent cohorts, reproducibl
 public data, with zero fabricated results.
 
 > Student researcher: Shiv Prahalathan · 16 y/o · Summer 2026.
+>
+> **Status:** Stage A (genomics) & Stage B (imaging) complete · Stage C (imaging survival) next.
 
 ---
 

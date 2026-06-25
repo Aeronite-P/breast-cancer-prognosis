@@ -6,7 +6,7 @@ tissue actually looks) — to predict breast-cancer survival, and test whether *
 them beats either one alone**. Validated across independent cohorts, reproducible from
 public data, with zero fabricated results.
 
-> Student researcher: Shiv Prahalathan · 16 y/o · Summer 2026 · heavy AI-assisted.
+> Student researcher: Shiv Prahalathan · 16 y/o · Summer 2026.
 
 ---
 
@@ -85,11 +85,11 @@ once the previous stage works — so an ambitious project never collapses to not
 - 📝 A short written report / mini-paper; optional preprint.
 - 🗒️ A 1-page abstract you can speak to fluently in essays and interviews.
 
-## 7. Your role vs. the AI's role (read this)
+## 7. Scientific ownership
 
-The AI writes the code. **You own every scientific decision** — endpoint, why fusion might
-help, what the limitations are, whether a result is real. For each stage the goal is that you
-can explain, in plain English, *what* we did and *why*. If you can't, we stop and fix that.
+Every scientific decision in this project is the researcher's: the question, the endpoint, the
+external-validation design, the interpretation, and the honest limitations. The standard for
+each stage is to be able to explain, in plain English, *what* was done and *why*.
 
 ## 8. How to run (Stage A, today)
 

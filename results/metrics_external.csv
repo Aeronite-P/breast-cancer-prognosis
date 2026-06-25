@@ -1,0 +1,10 @@
+test,c_index
+genes_metabric_internal_cv,0.598758413140807
+genes_tcga_internal_cv,0.620665406072729
+genes_train_metabric_test_tcga,0.6521542091856667
+genes_train_tcga_test_metabric,0.5724538203812969
+metabric_clinical,0.6617139087378066
+metabric_clinical_plus_genes,0.6664134076555875
+delta_c_mean,0.004819743783726693
+delta_c_lo95,-0.003649501996419191
+delta_c_hi95,0.014604898140072759

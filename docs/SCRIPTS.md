@@ -67,3 +67,58 @@ signal honestly.
 **What the result means:** A small log-rank p-value means the subtypes have genuinely
 different survival. It is a descriptive finding and a sanity check — **not** a prediction
 accuracy. Predictive modeling comes in Week 2+.
+
+---
+
+## `src/model.py`  (Stage A)
+**What:** The foundation result — trains and cross-validates survival models and proves the
+pipeline isn't cheating. Builds four models: **clinical-only**, **genes-only (PAM50)**,
+**clinical+genes**, and a **shuffled-label negative control**.
+
+**Reads:** `data/processed/metabric_merged.csv`.
+
+**Produces:**
+- Console: a C-index table (with per-fold mean ± std).
+- `results/metrics_stageA.csv` — the numbers.
+- `results/figures/stageA_cindex.png` — bar chart vs. the 0.5 random line.
+
+**Key ideas in the code (worth understanding):**
+- **C-index (concordance):** for pairs of patients, did the one who died sooner get the higher
+  predicted risk? 0.5 = random, 1.0 = perfect.
+- **Out-of-fold scoring:** every patient is scored by a model that never saw them in training
+  (`KFold`) — an honest estimate of real performance.
+- **No leakage:** imputation + scaling are fit on the *training* fold only, then applied to the
+  test fold (`make_preprocessor` inside `cv_cindex`).
+- **Negative control:** `shuffle_labels=True` scrambles outcomes; a correct pipeline then
+  scores ~0.5. If it scored high, we'd have a leak.
+- **Honest comparison:** the clinical baseline uses *truly clinical* variables only (no
+  molecular subtypes), so "genes vs. clinical" is a fair fight.
+
+**Run:** `python src/model.py`
+
+---
+
+## `notebooks/stage_b_breakhis_colab.ipynb`  (Stage B — runs on Colab)
+**What:** A transfer-learning CNN that classifies benign vs. malignant breast histopathology
+images (BreakHis), with a leakage-safe patient-level split. **Runs on a free Google Colab
+GPU**, not your laptop. See [`STAGE_B_COLAB.md`](STAGE_B_COLAB.md) for step-by-step instructions.
+
+---
+
+## `src/validate_external.py`  (Stage A rigor follow-ups)
+**What:** Two honest tests of the gene model. (1) **External validation** — train on one cohort
+and test on the *other* (METABRIC ↔ TCGA, microarray vs RNA-seq) to prove the signal generalizes.
+(2) **Significance test** — bootstrap a 95% CI for whether clinical+genes really beats clinical.
+
+**Reads:** `data/processed/metabric_merged.csv`; auto-downloads TCGA on first run.
+
+**Produces:**
+- Console: external-validation C-indices (both directions) + the ΔC-index with 95% CI and a
+  SIGNIFICANT / NOT-significant verdict.
+- `results/metrics_external.csv` and `results/figures/external_validation.png`.
+
+**Key idea:** a model that works only on its training cohort learned noise; one that still ranks
+survival in an independent cohort learned real biology. The bootstrap keeps us honest about
+whether small C-index gaps are real or just noise.
+
+**Run:** `python src/validate_external.py`  (reuses helpers in `model.py`)

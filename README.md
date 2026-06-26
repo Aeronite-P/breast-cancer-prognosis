@@ -12,8 +12,7 @@ public data, with zero fabricated results.
 
 ---
 
-## 1. Why this project is strong (and honest)
-
+## 1. Seperation
 Most high-school "AI + cancer" projects train one model on one dataset, report a high
 accuracy, and stop — which usually just measures overfitting. This project is built around
 what makes a prognostic study **credible**:

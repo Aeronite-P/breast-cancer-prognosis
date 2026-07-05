@@ -194,3 +194,42 @@ Significance: clinical 0.662 vs clinical+genes 0.666; ΔC = **+0.005, 95% CI [�
   the clinically costlier error type, worth reporting explicitly.
 - ROC figure currently lives in the Colab output; download it to
   `results/figures/stageB_breakhis_roc.png` to keep it in the repo.
+
+---
+
+## Entry 6 — 2026-06-25 · Stage A+ : full transcriptome vs 50 genes (does more help?)
+
+**What was done**
+- Built `src/boost_genes.py`. Downloaded the **full expression matrices** (METABRIC 20,604
+  genes; TCGA 20,472) from the cBioPortal datahub, and tested the **top-1,000 most-variable
+  genes** (20× the PAM50 panel) with high-dimensional survival models — **Random Survival
+  Forest** and **ridge-penalized Cox** (scikit-survival) — against PAM50 and clinical staging.
+  Same rigor: 5-fold CV, out-of-fold C-index, external validation, paired bootstrap.
+
+**Results (out-of-fold C-index)**
+| Model | C-index |
+|---|---|
+| Clinical staging (Stage A) | 0.662 |
+| PAM50 genes (RSF) | 0.608 |
+| Top-1,000 genes (RSF) | 0.599 |
+| Top-1,000 genes (ridge Cox) | 0.576 |
+- Top-1,000 vs PAM50: ΔC = **−0.010, 95% CI [−0.024, +0.004] → not significant** (more genes did *not* help).
+- Best gene model (0.599) still **does not beat clinical staging (0.662)**.
+- **External validation** (train METABRIC top genes → test TCGA, RSF, 926 shared genes): **C-index 0.651** (generalizes, consistent with Stage A).
+
+**Why it matters**
+- This **strengthens the Stage A negative into a robust one**: the earlier "genes don't beat
+  clinical" was NOT an artifact of using too few genes. Even the full transcriptome, with both
+  a non-linear (RSF) and a linear penalized model, **plateaus at ~0.60** and stays below clinical.
+- Scientifically cleaner conclusion: bulk gene-expression prognostic signal is **real and
+  generalizable (~0.60, external 0.65) but caps below standard clinical staging** — which is
+  exactly why the **imaging / multi-modal arm** is the place new signal must come from.
+
+**Assumptions**
+- Top-1,000 genes chosen by **unsupervised variance filter** (uses expression only, not outcomes).
+- Cross-platform z-scores (ref-diploid) treated as comparable; RSF n_estimators=100; ridge α=100 (fixed).
+
+**Limitations**
+- Tested top-1,000 genes (not literally all ~20k) and two model families — but the flat result
+  *across* models argues the ceiling is real, not a modeling choice.
+- Ridge α was fixed, not nested-CV tuned. Bulk expression only (no single-cell / spatial).

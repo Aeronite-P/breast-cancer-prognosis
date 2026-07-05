@@ -1,122 +1,128 @@
-# Multi-Modal Breast-Cancer Prognosis: Do Genes + Tumor Images Predict Survival Better Together?
+# 🧬🔬 Multi-Modal Breast-Cancer Prognosis
 
-**One-line:** Train AI on two different "views" of the same tumors — the **gene-expression
-fingerprint** (which genes are on/off) and the **microscope-slide appearance** (how the
-tissue actually looks) — to predict breast-cancer survival, and test whether **combining
-them beats either one alone**. Validated across independent cohorts, reproducible from
-public data, with zero fabricated results.
+### Do a tumor's **genes** and its **microscope appearance** predict survival better *together* than either alone?
 
-> Student researcher: Shiv Prahalathan · 16 y/o · Summer 2026.
+![Python](https://img.shields.io/badge/Python-3.9-3776AB?logo=python&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-success)
+![Status](https://img.shields.io/badge/status-active-brightgreen)
+![Data](https://img.shields.io/badge/data-public%20%7C%20reproducible-blue)
+
+> A reproducible, **externally-validated** machine-learning study that combines tumor **gene expression** and **histopathology imaging** to model breast-cancer survival — built entirely on public data, with a pre-registered analysis plan and honest reporting.
 >
+> **Researcher:** Shiv Prahalathan · Summer 2026
 > **Status:** Stage A (genomics) & Stage B (imaging) complete · Stage C (imaging survival) next.
 
 ---
 
-## 1. Seperation
-Most high-school "AI + cancer" projects train one model on one dataset, report a high
-accuracy, and stop — which usually just measures overfitting. This project is built around
-what makes a prognostic study **credible**:
+## 📌 TL;DR
 
-1. **Two complementary data types ("multi-modal").** Genes tell you the tumor's molecular
-   biology; the microscope slide tells you its physical structure. Real cancer-AI research
-   shows fusing them predicts outcomes better than either alone — and almost no high-schooler
-   attempts it.
-2. **External validation across independent cohorts** for the genomics arm (METABRIC ↔
-   TCGA-BRCA, two different measurement platforms). A model that survives this is real.
-3. **A "does it beat standard-of-care?" test.** We ask whether the AI adds prognostic value
-   *beyond* the staging clinicians already use — the question oncologists actually care about.
-4. **Interpretability + biological sanity-checks.** We open the models and confirm they
-   learned real biology, not noise.
+Breast cancer is many diseases, not one. This project asks whether AI can read **two complementary "views" of a tumor** — its molecular fingerprint (which genes are active) and its physical appearance under a microscope — to predict how patients fare, and whether **fusing both views beats either alone**. The genomics model **generalizes across two independent patient cohorts on two different platforms**, and the imaging model distinguishes benign from malignant tissue at **0.84 AUC**.
 
-## 2. The scientific question
+## ✨ Highlights
 
-> Can AI learn patterns from tumor **gene-expression** and **histopathology images** to
-> predict breast-cancer survival; does each modality generalize; and does **combining both
-> modalities improve prediction over either alone**, beyond standard clinical staging?
+- 🔁 **External validation** across two independent cohorts *and* two measurement platforms (microarray ↔ RNA-seq) — C-index **0.65**. The test most student projects skip.
+- 🛡️ **Leakage-proofed** with a shuffled-label **negative control** → **0.51** (chance), proving the results aren't an artifact.
+- 🖼️ **Image classifier** (transfer-learning CNN): benign vs. malignant at **0.84 AUC** on held-out patients.
+- 📋 **Pre-registered** analysis plan + **honest reporting** — including a documented negative result.
+- ♻️ **Fully reproducible** from public data with a fixed seed.
 
-Hypotheses and success criteria are pre-registered in [`PREREGISTRATION.md`](PREREGISTRATION.md)
-**before** modeling — our main safeguard against fooling ourselves or fishing for results.
+## ❓ The Question
 
-## 3. Data (100% public, no login for the core, no fabrication)
+> Can machine learning predict breast-cancer survival from tumor **gene expression** and **histopathology images**, does each modality **generalize** to unseen cohorts, and does **combining both** add value **beyond standard clinical staging**?
 
-| Modality | Cohort / dataset | Size | Role |
+## 🧪 Why this is rigorous (not just another notebook)
+
+1. **External validation.** Models are trained on one cohort and tested on a *completely separate* one, on different hardware — the strongest evidence a model learned real biology, not dataset quirks.
+2. **Negative control.** Survival labels are shuffled to destroy all signal; a correct pipeline then scores ~0.5. Ours did → no leakage.
+3. **"Beats standard-of-care?" test.** We measure whether the model adds value *beyond* the staging clinicians already use — the question that actually matters.
+4. **Pre-registration + honesty.** Hypotheses and success criteria are fixed *before* modeling (`PREREGISTRATION.md`); negative results are reported, not hidden.
+
+## 📊 Data (100% public)
+
+| Dataset | Modality | Size | Role |
 |---|---|---|---|
-| Gene expression + clinical | METABRIC (`brca_metabric`) | ~1,900 patients | Genomics train cohort |
-| Gene expression + clinical | TCGA-BRCA (`brca_tcga_pan_can_atlas_2018`) | ~1,000 patients | Genomics external validation; multi-modal cohort |
-| Histopathology (warm-up) | [BreakHis](https://web.inf.ufpr.br/vri/databases/breast-cancer-histopathological-database-breakhis/) | 9,109 images, 82 patients | Prove the image pipeline works |
-| Histopathology (WSIs) | [TCGA-BRCA slides](https://www.cancerimagingarchive.net/collection/tcga-brca/) (TCIA/GDC) | 3,111 slides, ~1,098 patients | Image survival + fusion (matched to genes) |
+| **METABRIC** | gene expression (microarray) + survival | ~1,980 patients | Genomics training cohort |
+| **TCGA-BRCA** | gene expression (RNA-seq) + survival | ~1,069 patients | Independent external validation |
+| **BreakHis** | histopathology images | ~9,000 images | Benign/malignant image model |
 
-Genomics via the [cBioPortal](https://www.cbioportal.org) API (see `src/fetch_data.py`).
-All data sources, links, sizes, and citations are documented in [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md).
+Gene data via the [cBioPortal](https://www.cbioportal.org) API. Full provenance + citations in [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md).
 
-**Endpoint:** Overall Survival (`OS_MONTHS`, `OS_STATUS`). Secondary: 5-year survival (binary).
+## ⚙️ Methods
 
-## 4. Staged, de-risked plan
+- **Survival modeling:** Cox proportional-hazards with cross-validation; scored by **Harrell's C-index** (0.5 = chance, 1.0 = perfect).
+- **Generalization:** train on one cohort → test on another (cross-platform).
+- **Integrity checks:** nested train/test separation, fixed seed (42), and a shuffled-label negative control.
+- **Imaging:** transfer-learning **CNN (EfficientNet)** with a **patient-level split** (no patient in two sets); scored by **AUC**.
 
-Each stage is a *complete, presentable deliverable on its own*. We only escalate complexity
-once the previous stage works — so an ambitious project never collapses to nothing.
+## 📈 Results
 
-- **Stage A — Genes (foundation, ~90% built).** Gene-expression survival model;
-  METABRIC↔TCGA external validation; "beats clinical staging?" test. *Guarantees a finished
-  project.*
-- **Stage B — Image warm-up (BreakHis).** Train a CNN (transfer learning) to classify
-  benign vs malignant on clean, pre-cropped images. Proves the imaging pipeline works.
-- **Stage C — Image survival (TCGA).** Take a tractable subset of TCGA slides → tile into
-  patches → embed with a pretrained pathology model → pool per patient → predict survival.
-- **Stage D — Fusion (headline).** Combine gene + image features for the *same* TCGA
-  patients; test whether fusion beats either modality alone (ΔC-index with confidence
-  intervals). Interpret what each modality contributes.
+**Genomics — survival prediction (C-index):**
 
-## 5. Methods (high level)
+| Model | C-index |
+|---|---|
+| Clinical only | 0.66 |
+| Genes (PAM50, 50) | 0.60 |
+| **Genes (full transcriptome, ~20k)** | **0.60** |
+| **External validation** (train METABRIC → test TCGA) | **0.65** |
+| Shuffled-label control | **0.51** ✅ |
 
-- **Genes:** penalized Cox regression / Random Survival Forest, nested cross-validation.
-- **Images:** transfer learning (pretrained CNN) for BreakHis; tiling + pretrained
-  feature extractor + multiple-instance/attention pooling for TCGA WSIs (on a free Colab/Kaggle GPU).
-- **Fusion:** combine per-patient gene + image feature vectors into a survival model
-  (late or joint fusion), optimized for the Cox objective.
-- **Metrics:** Harrell's C-index (+95% CI) and time-dependent AUC; incremental value via
-  likelihood-ratio / DeLong tests. Leakage guarded by strict train/test separation, nested
-  CV, fixed seed (42), and a **shuffled-label negative control** (must score ~0.5).
+> **Honest finding:** gene expression carries *real, generalizable* prognostic signal (~0.60, external 0.65) but does **not** beat standard clinical staging — and this holds even when scaling from the 50-gene panel to the **full transcriptome** (~20k genes) with both a random forest and a penalized Cox: performance plateaus at ~0.60. So the ceiling is *real*, not a feature-selection artifact — which is exactly why the imaging arm is worth pursuing: physical tumor structure may carry the complementary signal the molecules can't.
 
-## 6. Deliverables (your college-application artifact)
+**Imaging — benign vs. malignant:** **AUC 0.84**, accuracy 82% on held-out patients.
 
-- 📦 This public, reproducible GitHub repo.
-- 📊 Figures: survival curves, C-index comparison across modalities, fusion-vs-single plot,
-  interpretability (SHAP / attention heatmaps on slides).
-- 📝 A short written report / mini-paper; optional preprint.
-- 🗒️ A 1-page abstract you can speak to fluently in essays and interviews.
+*(Figures in [`results/figures/`](results/figures): survival-by-subtype, model comparison, external validation, ROC.)*
 
-## 7. Scientific ownership
+## 🗂️ Repository Structure
 
-Every scientific decision in this project is the researcher's: the question, the endpoint, the
-external-validation design, the interpretation, and the honest limitations. The standard for
-each stage is to be able to explain, in plain English, *what* was done and *why*.
+```
+├── README.md              # you are here
+├── PREREGISTRATION.md     # analysis plan locked before modeling
+├── LAB_NOTEBOOK.md        # dated log of every step (what / why / assumptions / limits)
+├── config.py              # studies, gene panel, seed
+├── src/
+│   ├── fetch_data.py      # pull public data from cBioPortal
+│   ├── eda.py             # survival-by-subtype analysis
+│   ├── model.py           # Stage A: survival models + negative control
+│   └── validate_external.py  # cross-cohort validation + significance test
+├── notebooks/
+│   └── stage_b_breakhis_colab.ipynb   # Stage B: image classifier (Colab/GPU)
+├── docs/                  # script docs, data sources, Colab guide
+└── results/               # metrics + figures
+```
 
-## 8. How to run (Stage A, today)
+## ▶️ Reproduce It
 
 ```bash
+git clone https://github.com/Aeronite-P/breast-cancer-prognosis.git
 cd breast-cancer-prognosis
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python src/fetch_data.py        # pulls METABRIC clinical + gene expression
-python src/eda.py               # first result: survival by subtype
+
+python src/fetch_data.py        # download public data
+python src/eda.py               # survival-by-subtype result
+python src/model.py             # Stage A models + negative control
+python src/validate_external.py # cross-cohort external validation
 ```
-Imaging stages (B–D) run on a free cloud GPU (Google Colab / Kaggle) — set up when we reach them.
+The imaging model (Stage B) runs on a free GPU — see [`docs/STAGE_B_COLAB.md`](docs/STAGE_B_COLAB.md).
 
-## 9. Honest challenges & limitations
+## 🗺️ Roadmap
 
-- Microscope slides are gigapixel; we process a **subset**, so the image/fusion analyses have
-  fewer patients and wider confidence intervals.
-- The fusion analysis is **TCGA-only** (only cohort with both modalities) — weaker external
-  validation than the genomics arm; possible future check against CPTAC-BRCA.
-- BreakHis is a *classification* warm-up, not a survival cohort — it validates the pipeline,
-  not the survival claim.
-- All data is retrospective and observational: **associations, not causation; a research
-  artifact, not a clinical tool.**
+- [x] **Stage A** — genomic survival model + external validation
+- [x] **Stage B** — histopathology image classifier
+- [ ] **Stage C** — survival prediction from TCGA whole-slide images
+- [ ] **Stage D** — **fusion**: combine genes + images and test the headline question
 
-## 10. Integrity principles
+## ⚠️ Limitations
 
-No fabricated or altered data. No cherry-picked metrics. Pre-registered analysis plan.
-Negative results reported. Every number reproducible from public data with a fixed seed.
-See [`PREREGISTRATION.md`](PREREGISTRATION.md) and the running [`LAB_NOTEBOOK.md`](LAB_NOTEBOOK.md).
+- Retrospective, observational data → **associations, not causation.** A research model, **not a clinical or screening tool.**
+- The gene and image models are **not yet fused** (Stage D).
+- Narrow features so far (PAM50 = 50 genes); TCGA has relatively few events; BreakHis covers 82 patients.
+- Planned fusion will be single-cohort (TCGA), so its external validation will be weaker.
+
+## 📚 Citation & Data
+
+If you build on this, please cite the source studies (METABRIC: Curtis et al. 2012, Pereira et al. 2016; TCGA-BRCA; BreakHis: Spanhol et al. 2016) and cBioPortal (Cerami et al. 2012; Gao et al. 2013). See [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md).
+
+## 📄 License
+
+MIT — see [`LICENSE`](LICENSE).

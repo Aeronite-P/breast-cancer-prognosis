@@ -233,3 +233,183 @@ Significance: clinical 0.662 vs clinical+genes 0.666; ΔC = **+0.005, 95% CI [�
 - Tested top-1,000 genes (not literally all ~20k) and two model families — but the flat result
   *across* models argues the ceiling is real, not a modeling choice.
 - Ridge α was fixed, not nested-CV tuned. Bulk expression only (no single-cell / spatial).
+
+---
+
+## Entry 7 — 2026-07-08 · Stage C (imaging survival) + Stage D (fusion): the confound & the honest result
+
+**What was done**
+- Built the imaging-survival pipeline (`src/stage_c_local.py`): whole-slide image → tile →
+  ResNet50 features → average per patient → Cox. Ran **locally on CPU** (hit Colab GPU limits),
+  using OpenSlide + **resume-capable GDC downloads** for the gigapixel (~0.4–1 GB) slides.
+- **Caught a confound:** the download shortcut (alive = small slides, dead = big slides) made
+  **slide file size itself predict survival** (size-alone C-index 0.63), inflating the image
+  C-index to a spurious **0.907**. Rejected it.
+- **Fixed it:** size-matched case/control sampling (nearest-neighbor on slide size) → 14 dead +
+  14 alive, mean slide size **372 vs 377 MB**. Built `src/stage_cd.py` = confound gate +
+  images-only + genes-only + **fusion**, all 5-fold out-of-fold C-index + bootstrap 95% CI.
+
+**Results (n=28, 14 deaths, size-matched)**
+| Test | C-index | 95% CI |
+|---|---|---|
+| Confound gate (slide size alone) | **0.434** ✅ controlled | — |
+| Images only | 0.555 | [0.28, 0.78] |
+| Genes only (PAM50, this subset) | 0.491 | [0.30, 0.67] |
+| **Fusion (genes + images)** | **0.578** | [0.35, 0.78] |
+- Fusion − best single modality = **+0.023** (directionally consistent with multi-modal, not significant).
+
+**Why it matters**
+- The confounded **0.907 collapsed to ~0.5** once slide size was controlled → the imaging "signal"
+  was almost entirely an acquisition artifact. Rigor caught a false positive — the headline lesson.
+- Fusion being the highest is a *faint hint* for the multi-modal hypothesis, but **all CIs span
+  0.5** → nothing is statistically distinguishable from chance.
+
+**Assumptions**
+- Size-matching removes the main acquisition confound (verified: gate 0.43 ≈ 0.5).
+- Generic ResNet50/ImageNet features + mean pooling (not pathology-specific / attention-MIL).
+
+**Limitations (honest)**
+- Only **28 patients / 14 deaths** → severely underpowered; point estimates unstable (images
+  0.42 at n=27 → 0.56 at n=28 — one patient moved it 0.14).
+- Single cohort (TCGA), low magnification, generic features. A fair test needs **hundreds** of
+  patients (institutional scale).
+- The genes-on-this-subset number (0.49) is small-sample noise and does **not** revise Stage A's
+  full-cohort external-validation result (0.65).
+- **Conclusion:** no statistically reliable imaging or fusion survival signal in this sample; the
+  durable contribution is the pipeline + the caught confound.
+
+---
+
+## Entry 8 — 2026-07-XX · Stage C/D DEFINITIVE (well-powered, n=221)
+
+**What was done**
+- Cracked the download bandwidth wall: GDC throttles ~0.3 MB/s per connection, but **8 parallel
+  streams aggregate to ~2 MB/s** (`src/stage_c_parallel.py`). Scaled the size-matched sample to
+  **221 patients / 111 deaths** (heading to 260) — a genuinely well-powered WSI survival study.
+- Re-ran `src/stage_cd.py` (confound gate + images / genes / fusion, 5-fold OOF C-index + bootstrap CI).
+
+**Results (n=221, 111 deaths, size-matched)**
+| Test | C-index | 95% CI |
+|---|---|---|
+| Confound gate (slide size alone) | **0.496** ✅ | — |
+| Genes only (PAM50) | **0.612** | [0.55, 0.68] — significant |
+| Images only | **0.504** | [0.43, 0.57] — null |
+| Fusion (genes + images) | **0.575** | [0.50, 0.64] |
+- Fusion − best single = −0.037 (fusion does NOT beat genes).
+
+**Why it matters (definitive)**
+- Confound fully controlled (gate 0.496; alive 983MB ≈ dead 979MB).
+- **Genes significantly predict survival** (CI clears 0.5), consistent with Stage A.
+- **Images are a confident, well-powered null** (0.504, tight CI; converged from 0.40@n=96).
+- **Fusion does not beat genes** — headline multi-modal hypothesis is rejected, well-powered.
+
+**Limitations**
+- Generic ImageNet features + mean pooling (not pathology-specific / attention-MIL) → "no image
+  signal with a standard approach," not a claim that histology is inherently uninformative.
+- Single cohort (TCGA).
+
+---
+
+## Entry 9 — 2026-07-23 · SOTA imaging upgrade (Phikon + attention-MIL), n=244
+
+**What was done**
+- Replaced generic ResNet/mean-pool with a **pathology foundation model**: Phikon (Owkin, trained
+  on TCGA tissue) embeds each tile → 768-dim, saving the **full per-tile matrix** per patient
+  (`src/stage_c_pathology.py`). Pooled with **attention-MIL** (gated attention + Cox head,
+  `src/stage_e_attmil.py`) so the model learns which tumor regions carry survival signal.
+- Scaled to **244 patients / 123 deaths** (16 of the 260 size-matched slides failed download —
+  the largest files; not worth chasing).
+- Two follow-up analyses: redundancy of the two risk scores (`src/stage_f_redundancy.py`) and
+  late fusion vs. joint concat fusion (`src/stage_g_latefusion.py`).
+
+**Results (n=244, 123 deaths, 5-fold OOF C-index + bootstrap CI)**
+| Model | C-index | 95% CI |
+|---|---|---|
+| Images (Phikon + attention-MIL) | **0.603** | [0.54, 0.66] — real signal |
+| Genes only (PAM50) | **0.611** | [0.56, 0.67] |
+| Concat fusion (joint-trained) | 0.590 | [0.53, 0.65] — worst |
+| **Late fusion (mean of risk scores)** | **0.639** | [0.58, 0.69] — best |
+- Late fusion − best single arm = **+0.029**; ΔC bootstrap 95% CI **[−0.016, +0.073]**, P(not
+  better) ≈ **0.11** → **trend, NOT statistically significant.**
+
+**Redundancy check (why fusion behaves this way)**
+- Image-risk vs gene-risk: Pearson **r = 0.22** (Spearman 0.24) → the two arms are **largely
+  independent**, not redundant. Top-quartile high-risk flags overlap only 21/53 (Jaccard 0.25).
+- Among patients genes rate **low-risk**, image-only still ranks deaths at **C = 0.586** → imaging
+  rescues cases genes miss. The modalities are **complementary**.
+
+**Why it matters**
+- **Imaging went from a well-powered null (0.504, Entry 8) to a real signal (0.603)** — the earlier
+  null was a *method* limitation (generic features + mean pool), not the biology.
+- Because the arms are complementary, **late fusion (0.639) is the best model** — beats genes,
+  images, and the concat fusion. But the improvement is **modest (+0.03) and not significant at
+  this N.**
+- **How you fuse matters:** naive joint concat (0.590) is the *worst* — below both single arms;
+  simple late averaging of independent risk scores is best. A concrete, publishable methods lesson.
+
+**Honest conclusion**
+- Original headline ("fusion significantly beats either modality") is **not yet supported** — the
+  effect trends the right way with a demonstrated mechanism (complementarity), but the single-cohort
+  CI still includes zero. Correct statement: *"late fusion of complementary imaging and gene
+  signals gave the highest concordance (0.639) and a consistent trend toward improvement (+0.03)
+  that did not reach significance at n=244."*
+
+**Limitations**
+- Single cohort (TCGA-BRCA) → the trend needs **external validation** on an independent cohort to
+  become a claim; more TCGA patients won't fix a ~0.03 effect.
+- 16/260 slides missing (download failures on the largest files).
+- PAM50 gene panel only (Stage A showed genes add little beyond clinical staging — clinical
+  baseline not yet included in this fusion).
+
+---
+
+## Entry 10 — 2026-07-23 · Clinical baseline + site-held-out external validation, n=244
+
+**Part A — the honest clinical baseline (`src/stage_h_clinical.py`)**
+Added a clinical arm (age + AJCC/TNM stage) and asked the real question: does anything beat the
+clinician? Out-of-fold C-index, same 244 patients / 123 deaths.
+| Model | C-index | 95% CI |
+|---|---|---|
+| Clinical alone (age+TNM stage) | **0.632** | [0.57, 0.69] — strongest *single* arm |
+| Genes (PAM50) | 0.611 | [0.56, 0.67] |
+| Images (attention-MIL) | 0.603 | [0.54, 0.66] |
+| Late: genes+images | 0.639 | [0.58, 0.69] |
+| Late: images+clinical | 0.657 | [0.60, 0.71] |
+| **Late: genes+images+clinical** | **0.666** | [0.61, 0.72] — best overall |
+
+vs clinical alone (bootstrap ΔC): genes −0.021 · images −0.030 · genes+images +0.007 ·
+**genes+images+clinical +0.034 [−0.017, +0.086]** (biggest, tightest — trend, not significant).
+- **Headline (revised, more clinical):** *no single molecular modality beats clinical staging,
+  but the full multi-modal fusion (0.666) trends toward adding value beyond the clinician (+0.034).*
+  Better framing than "fusion vs genes" — it answers "does AI add to what the doctor already has?"
+
+**Part B — external validation strategy (why leave-site-out)**
+- Confirmed there is **NO second WSI breast cohort on GDC** — TCGA-BRCA is the only project with
+  breast diagnostic slides (1,133); CPTAC-3 has 0. A planned CPTAC download was not possible.
+- Pivoted to **leave-site-out validation** (`src/stage_i_leavesite.py`): the 244 patients span
+  **25 tissue-source-sites** (institutions). GroupKFold by site → every test patient's institution
+  is absent from training. Measures survival under real cross-site distribution shift (scanner,
+  staining, population) with no new data.
+
+**Part B results (site-held-out)**
+| Model | Site-held-out C-index | Random-split (Entry 9) |
+|---|---|---|
+| Images | 0.577 [0.52, 0.64] | 0.603 |
+| Genes | 0.595 [0.53, 0.65] | 0.611 |
+| Late fusion | **0.607** [0.55, 0.66] | 0.639 |
+- Small, healthy generalization gap (~0.02–0.03); **all CIs still exclude 0.5** → signal survives
+  unseen institutions (not batch-effect). Late fusion remains the best arm across sites.
+
+**Why it matters**
+- The imaging/fusion signal **generalizes across hospitals**, strengthening it beyond a single
+  random split. Together with the gene arm's true cross-cohort validation (METABRIC→TCGA 0.652,
+  Stage A), the generalization story is now two-pronged.
+
+**Limitations (honest)**
+- Leave-site-out is **quasi-external** (still TCGA, same era/pipeline family) — a fully independent
+  cohort would be stronger, but none exists publicly for breast WSI + genes + survival. **Screened
+  CPTAC-BRCA** (the obvious candidate): it has 642 WSIs (TCIA) + transcriptomics (cBioPortal
+  `brca_cptac_2020` / `breast_cptac_gdc`) but only **2 recorded deaths and no follow-up times**
+  (proteogenomics cohort, not outcome-tracked) → cannot compute survival concordance → excluded.
+- Clinical/fusion improvement over the clinician remains a **trend, not significant** at n=244.
+- TNM stage extracted by string-parsing AJCC fields; median-imputed missing values.

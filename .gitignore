@@ -3,10 +3,16 @@
 __pycache__/
 *.pyc
 
-# Data — keep the repo light; data is re-downloadable from cBioPortal via src/fetch_data.py
+# Data — keep the repo light; data is re-downloadable / regenerable
 data/raw/
 data/processed/
+data/stage_c_features/
+data/stage_c_matched/
+data/stage_c_tiles/
 *.tar.gz
+
+# Downloaded third-party tools (binaries, not project code)
+tools/
 
 # Notebook checkpoints / OS cruft
 .ipynb_checkpoints/

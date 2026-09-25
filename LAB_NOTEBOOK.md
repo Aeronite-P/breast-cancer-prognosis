@@ -413,3 +413,50 @@ vs clinical alone (bootstrap ΔC): genes −0.021 · images −0.030 · genes+im
   (proteogenomics cohort, not outcome-tracked) → cannot compute survival concordance → excluded.
 - Clinical/fusion improvement over the clinician remains a **trend, not significant** at n=244.
 - TNM stage extracted by string-parsing AJCC fields; median-imputed missing values.
+
+---
+
+## Entry 11 — 2026-09-23 · Robustness checks, clinical metrics, and paper figures (n=244)
+
+**What was done**
+- Built `src/make_figures.py`: computes every out-of-fold risk score once (random split,
+  site-held-out, shuffled-label control, 4 extra seeds = 14 attention-MIL trainings), caches them in
+  `results/oof_risks.csv`, and draws all figures + Table 1 from the cache.
+- **Reproducibility check:** a fresh run reproduced all five headline C-indices from Entries 9–10
+  exactly (images 0.603, genes 0.611, clinical 0.632, genes+images 0.639, full model 0.666).
+
+**Results**
+| Check | Result |
+|---|---|
+| Negative control (shuffled labels), all 6 models | 0.45–0.53 → **pass**, no leakage |
+| Full model across 5 seeds | **0.660 ± 0.008** (range 0.644–0.668) |
+| Full model, site-held-out (new) | **0.648** [0.59, 0.70]; clinical site-held-out 0.641 |
+| Full model vs clinical (ΔC) | +0.034 [−0.017, +0.086], P(not better) = 0.11 → trend |
+| Time-dependent AUC, mean over 1–8 yr | clinical **0.649** vs full model **0.696** |
+| AUC at 1 / 3 / 5 yr | clinical 0.727 / 0.629 / 0.639 · full 0.748 / 0.699 / 0.684 |
+| KM median split — clinical model | HR **2.32** [1.60, 3.36], log-rank p < 0.001 |
+| KM median split — full model | HR **1.81** [1.26, 2.59], log-rank p = 0.001 |
+| Image-risk vs gene-risk correlation | Pearson r = **0.19** |
+| Image C within gene-low-risk half | **0.595** |
+
+**Why it matters**
+- The shuffled-label control and 5-seed stability show the full model's ~0.66 is neither leakage
+  nor a lucky seed; it also holds on hospitals the model never saw (0.648).
+- The full model beats clinical on time-dependent AUC at every horizon, most at 3 years (+0.07).
+
+**Assumptions**
+- KM groups use a global median split of out-of-fold risk (risk scores come from 5 fold-models).
+- Time-dependent AUC uses the same patients as reference and test set.
+
+**Limitations (honest)**
+- **On a simple high/low split the clinical model separates survival MORE sharply** (HR 2.32 vs
+  1.81). The multi-modal gain appears in fine-grained ranking (C-index, time-AUC), not in a coarse
+  two-group split — stage alone already produces a strong dichotomy.
+- The headline 0.666 is seed 42, near the top of the 5-seed range; **0.660 ± 0.008 is the more
+  honest figure** to report.
+- No significance test yet on the time-AUC difference; ΔC vs clinical is still not significant.
+- The cohort is **50% deaths by design** (size-matched case/control), far above TCGA's ~14%, so
+  absolute metrics may differ in an unselected population.
+- Correlation r = 0.19 here vs 0.22 in Entry 9 (stage_f computed it on a different score
+  definition); image C in the gene-low-risk half is 0.595 here vs 0.586 there. Same conclusion.
+- Calibration not yet assessed.

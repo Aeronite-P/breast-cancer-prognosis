@@ -122,3 +122,27 @@ survival in an independent cohort learned real biology. The bootstrap keeps us h
 whether small C-index gaps are real or just noise.
 
 **Run:** `python src/validate_external.py`  (reuses helpers in `model.py`)
+
+---
+
+## `src/make_figures.py`  (publication figures + robustness checks)
+**What:** Computes every out-of-fold risk score once (images, genes, clinical) for four settings —
+random 5-fold, site-held-out, shuffled labels (negative control), and 4 extra random seeds — caches
+them, then draws all paper figures and Table 1 from that cache. Every plotted number comes from code.
+
+**Reads:** `data/stage_c_tiles/` (Phikon tile embeddings), `data/processed/tcga_merged.csv`.
+
+**Produces:**
+- `results/oof_risks.csv` — the cache (all risk scores; delete it or pass `--recompute` to retrain)
+- `results/figures/fig2_cindex_forest.png` — C-index ± 95% CI, random split vs unseen hospitals
+- `results/figures/fig3_km_risk_groups.png` — Kaplan-Meier high vs low risk, clinical vs multi-modal
+- `results/figures/fig4_time_auc.png` — discrimination over 1–8 years
+- `results/figures/fig5_complementarity.png` — image risk vs gene risk
+- `results/table1_cohort.md`, `metrics_final.csv`, `delta_vs_clinical.csv`, `robustness.csv`,
+  `km_risk_groups.csv`, `time_auc.csv`
+
+**Key idea:** computing once and plotting from a cache keeps the figures, the tables, and the lab
+notebook consistent with each other. The patient order matches `stage_h_clinical.py`, so the
+random-split numbers reproduce Entries 9–10 exactly.
+
+**Run:** `python src/make_figures.py` (~8 min first time; seconds after, from cache)

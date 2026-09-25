@@ -9,6 +9,9 @@ data/processed/
 data/stage_c_features/
 data/stage_c_matched/
 data/stage_c_tiles/
+data/stage_c_tiles_full/
+data/stage_c_coords/
+data/logs/
 *.tar.gz
 
 # Downloaded third-party tools (binaries, not project code)

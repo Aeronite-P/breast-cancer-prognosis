@@ -88,7 +88,7 @@ Cohort characteristics: [`results/table1_cohort.md`](results/table1_cohort.md) �
 ## 🗂️ Repository Structure
 
 ```
-├── README.md · LAB_NOTEBOOK.md · PREREGISTRATION.md · PUBLICATION_ROADMAP.md · STUDY_GUIDE.md
+├── README.md · LAB_NOTEBOOK.md · PREREGISTRATION.md · PUBLICATION_ROADMAP.md
 ├── REPORT.md                  # early write-up (July, pre-n=244) — superseded by the lab notebook
 ├── config.py                  # studies, gene panel, seed
 ├── src/

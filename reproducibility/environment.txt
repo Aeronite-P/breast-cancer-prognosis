@@ -1,0 +1,13 @@
+python 3.9.6
+os macOS-26.5.1-arm64-arm-64bit
+machine arm64
+numpy 2.0.2
+scikit-learn 1.5.2
+scikit-survival 0.23.1
+lifelines 0.30.0
+torch 2.8.0
+transformers 4.57.6
+openslide-python 1.4.2
+openslide (C library) 4.0.1
+phikon model (huggingface owkin/phikon) revision 057cc0295895c2df3dd7681a89680da6015cbefe
+random seed 42

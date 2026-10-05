@@ -146,3 +146,117 @@ notebook consistent with each other. The patient order matches `stage_h_clinical
 random-split numbers reproduce Entries 9–10 exactly.
 
 **Run:** `python src/make_figures.py` (~8 min first time; seconds after, from cache)
+
+---
+
+## `src/stage_k_heatmaps.py`  (attention heatmaps)
+**What:** Shows which tissue tiles the image model weighted most for a few example patients, using
+each patient's out-of-fold model (retrained with seed 42 and checked against the cached risks).
+Re-downloads the example slides, recomputes tile positions (checked against saved features), saves
+thumbnails and top tiles, deletes the slides, and draws Fig 6.
+
+**Produces:** `results/figures/fig6_attention_heatmaps.png` (clean journal version — definitions go in
+the caption) and `results/figures/fig6b_attention_heatmaps_explained.png` (presentation version: a
+"how to read this" key defining every term, a ✓/✗ verdict per patient, and a short note on what the
+top tiles show — labelled as a non-expert read pending pathologist review); per-patient cache in
+`data/stage_k_heatmaps/` (gitignored).
+
+**Run:** `python src/stage_k_heatmaps.py` (~1 hour, mostly downloading; re-plotting from cache takes seconds)
+
+---
+
+## `src/stage_l_fullcohort.py`  (full-cohort analysis, n = 1,033)
+**What:** Repeats every n = 244 analysis, unchanged, on all 1,033 TCGA-BRCA patients with a diagnostic
+slide, survival and PAM50 data (146 deaths, 39 hospitals), by re-using `make_figures.py` with the cohort
+and output folders swapped. Adds: a frozen-model test (train on the original 244, test on the 789 new
+patients), 3- and 5-year calibration with Brier scores, a 244-vs-1,033 comparison, and the negative
+control repeated over 10 shuffles.
+
+**Reads:** `data/stage_c_tiles/` + `data/stage_c_tiles_full/`, `data/processed/tcga_merged.csv`.
+
+**Produces:** `results/fullcohort/` (oof_risks_full.csv cache, metrics_final.csv, delta_vs_clinical.csv,
+robustness.csv, km_risk_groups.csv, time_auc.csv, table1_cohort.md, frozen_validation.csv,
+calibration_brier.csv, calibration_quintiles.csv, negative_control_repeats.csv,
+comparison_244_vs_1033.csv) and `results/figures/fullcohort/` (fig2–5, fig7 calibration, fig8 244 vs 1,033).
+The n = 244 results in `results/` are never touched.
+
+**Run:** `python src/stage_l_fullcohort.py` (~45 min first time, mostly attention-MIL training; seconds after, from cache)
+
+---
+
+## `src/stage_m_added_value.py`  (does the image model add anything beyond staging?)
+**What:** Runs exactly the five follow-up analyses fixed in advance in PREREGISTRATION.md §12:
+A1 independent prognostic value (Cox + likelihood-ratio test), A2 learned-weight fusion with nested
+cross-validation, A3 exploratory subgroups (Holm-corrected), A4 slide-size confound (needs the GDC API;
+skipped with a message if GDC is down), A5 bootstrap CIs for time-AUC and Brier differences plus
+decision curves. Includes safety checks (fresh retrain = cached risks; Brier = Entry 13).
+
+**Reads:** `results/fullcohort/oof_risks_full.csv` (from `stage_l_fullcohort.py`), the tile folders (A2),
+the GDC API (A4, cached to `results/fullcohort/gdc_dx_slides.csv`).
+
+**Produces:** `results/fullcohort/added_value/` (a1_*, a2_*, a3_subgroups.csv, a4_*, a5_*) and
+`results/figures/fullcohort/fig9_decision_curves.png`, `fig10_subgroups.png`.
+
+**Run:** `python src/stage_m_added_value.py` (~20 min first time for A2's nested CV; ~3 min after, from cache)
+
+---
+
+## `src/stage_n_tissue.py`  (is the image signal just tissue composition?)
+**What:** Amendment B (PREREGISTRATION.md §13). B1 clusters all ~206,000 tiles by appearance (standardized
+Phikon features → PCA 50 → k-means k = 8, sensitivity k = 12; no outcomes used). B2 re-trains the five
+out-of-fold image models (checked against the cached risks) and measures each cluster's share of tiles vs
+share of attention. B3 (primary) tests whether the image risk still predicts survival after adjusting for
+age, stage, T, N and tissue composition (Cox likelihood-ratio test). Also a descriptive count of hospitals
+per cluster. B4 (cluster labels from re-downloaded tiles; filtered re-train) is added when GDC is back.
+
+**Reads:** the tile folders, `results/fullcohort/oof_risks_full.csv`.
+**Produces:** `results/fullcohort/tissue/` (composition_k8/k12, b1_hospitals_per_cluster_k8, b2_attention_by_cluster_k8/k12,
+b3_primary_tests, b3_composition_only_cindex, b3_cox_clinical_composition_image) and
+`results/figures/fullcohort/fig11_attention_by_cluster.png`; per-tile clusters and attention in `data/stage_n_tissue/` (gitignored).
+
+**Run:** `python src/stage_n_tissue.py` (~4 min first time, mostly re-training; seconds after, from cache)
+
+---
+
+## `src/stage_o_followups.py`  (Amendment C: fat, robustness, gene explanations)
+**What:** PREREGISTRATION.md §14. **C1** splits tile cluster 2 into 4 sub-clusters (in B1's exact PCA space —
+checked by distance-to-centre and adjusted Rand index), measures attention per sub-cluster, crops 10 example
+tiles per sub-cluster from re-downloaded slides (`--c1-crops`, features checked, slides deleted) and, if a
+sub-cluster is labelled fat/background in `c1_labels.csv`, re-trains the image model without it and runs the
+primary LRT (`--c1-filter`). **C2** robustness: 100 tiles per patient, five fixed fusion weightings, results
+without the blank-slide patient. **C3** exact SHAP values for the linear gene model.
+**Produces:** `results/fullcohort/followups/` and `results/figures/fullcohort/fig13_cluster2_subclusters.png`,
+`fig14_gene_shap.png`.
+**Run:** `python src/stage_o_followups.py` (C2 + C3, ~5 min) · `--c1-crops` (~40 min, downloads) · `--c1-filter` (~3 min)
+
+---
+
+## `src/make_paper_figures.py`  (Figure 1 + supplement)
+**What:** Draws Figure 1 (pipeline), Figure S1 (cohort flow from 1,082 to 1,033 patients — every count computed
+from the data), Table S1 (all model/analysis settings) and Table S2 (every sensitivity result, read from the
+result files by name). Tables are saved as figures and as Markdown in `results/supplement/`.
+**Run:** `python src/make_paper_figures.py` (seconds)
+
+---
+
+## `src/make_manifest.py`  (reproducibility package)
+**What:** Builds `reproducibility/`: exact package versions (`requirements-lock.txt`), environment and
+Phikon model revision (`environment.txt`), a per-patient manifest of the 1,033 patients with GDC slide
+file id / size / MD5 and SHA-256 checksums of every saved feature file (`cohort_manifest.csv`), SHA-256
+checksums of every results file (`results_checksums.sha256`), and a README explaining how to verify.
+Slide columns read the GDC listing cached by `stage_m_added_value.py`; they say "pending GDC" until then.
+
+**Run:** `python src/make_manifest.py` (seconds). Verify results: `shasum -a 256 -c reproducibility/results_checksums.sha256`.
+
+---
+
+## `src/watch_download.py`  (live progress screen for the full-cohort download)
+**What:** A read-only dashboard in the terminal while `stage_c_pathology.py --all` runs. Refreshes every
+3 seconds: patients saved (of 789 new / 1,033 total), a progress bar for each slide being downloaded
+(MB done / total, speed averaged over 30 s), total speed, recent pace (patients/hour) with a rough
+days-left estimate, and the last log lines.
+
+**Reads:** `/tmp/*.svs` file sizes, `data/stage_c_tiles_full/`, `data/logs/stage_c_full.log`, and one
+GDC request for slide sizes. **Writes nothing** and never touches the job — safe to open/close any time.
+
+**Run:** `python src/watch_download.py` (Ctrl+C to quit; the download keeps running)

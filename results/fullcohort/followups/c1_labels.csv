@@ -1,0 +1,5 @@
+sub_cluster,examples_viewed,non_expert_label,fat_or_background_of_10,rule_flags_fat_or_background,notes
+2a,10,"stroma and smooth-muscle-like tissue, some tissue edges; one ink mark",2,False,"plus 2 tiles about half background at tissue edges; no fat seen"
+2b,10,"NO TISSUE: uniform dark grey/black areas (7) and solid red or red-white gradient areas (3)",10,True,"non-tissue background/artifact that passed the HSV tissue filter (dark = low value; red = high saturation)"
+2c,10,"dense collagenous (fibrous) stroma",0,False,"no fat seen"
+2d,0,"not labelled (no tiles in the 30-patient sample)",,False,"55 patients; cannot be labelled, so not flagged (pre-specified rule)"

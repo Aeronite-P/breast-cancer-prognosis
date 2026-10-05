@@ -13,6 +13,7 @@ data/stage_c_tiles_full/
 data/stage_c_coords/
 data/logs/
 data/stage_k_heatmaps/
+data/stage_n_tissue/
 *.tar.gz
 
 # Downloaded third-party tools (binaries, not project code)
@@ -25,5 +26,6 @@ tools/
 # Keep figures (small) so the repo shows results
 !results/figures/
 
-# Personal study notes (kept locally, not published)
-STUDY_GUIDE.md
+# Personal, local-only files (study notes, exported decks) — never published
+personal/
+.DS_Store

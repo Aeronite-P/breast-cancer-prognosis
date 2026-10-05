@@ -1,0 +1,9 @@
+cluster,examples_viewed,non_expert_label,fat_or_background_of_10,rule_flags_fat_or_background,hospitals_where_dominant,attention_enrichment,notes
+1,10,"fibrous stroma (pale staining), one tumor nest","1-2",False,4,0.92,"mostly hospital BH; all 10 crops from 1 patient"
+2,10,"dense collagenous (fibrous) stroma, bright eosin","1-2",False,20,2.38,"core of the cluster; Entry-12 heatmap shows FAT tiles of TCGA-A2-A0CQ also fall in this cluster"
+3,10,"mixed tumor cells and stroma (lavender staining)",0,False,1,0.96,"single hospital A8 (staining style)"
+4,10,"mixed: acellular amorphous pink material, hazy/out-of-focus patches, some stroma","~4 (uncertain)",False,5,0.71,"mostly hospital D8; borderline, needs pathologist"
+5,10,"loose wavy pale stroma","0-1",False,2,0.94,"mostly hospital E2"
+6,10,"cellular: sheets of dark nuclei (tumor or immune cells), tumor cells, tissue edges","~2",False,37,0.37,"Entry-12 high-risk top tiles fall here"
+7,0,"not labelled (no tiles in the 30-patient sample)",,False,1,0.94,"single hospital AR; Entry-12 missed case (TCGA-AR-A1AR) is 100% this cluster"
+8,0,"not labelled (no tiles in the 30-patient sample)",,False,1,0.94,"single hospital E9"

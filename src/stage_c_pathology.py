@@ -18,9 +18,11 @@ Tile positions are saved to data/stage_c_coords/ so attention heatmaps need no r
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import sys
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -59,6 +61,19 @@ def _saved() -> int:
     return len([f for f in os.listdir(d) if f.endswith(".npy")]) if os.path.isdir(d) else 0
 
 
+def _wait_for_gdc():
+    """Block until the GDC API answers again. Without this, a network/GDC outage made every
+    download fail instantly and the run skipped ~550 patients in 90 minutes (Sept 26, run 1).
+    Now an outage just pauses the run."""
+    while True:
+        try:
+            if requests.get("https://api.gdc.cancer.gov/status", timeout=20).ok:
+                return
+        except Exception:
+            pass
+        time.sleep(60)
+
+
 def _have(patient) -> bool:
     """Already featurized? (full mode also counts the original 244, so nothing is re-downloaded)"""
     dirs = [TILES_DIR, TILES_FULL_DIR] if FULL else [TILES_DIR]
@@ -76,11 +91,12 @@ def slide_list_all(surv):
         {"op": "in", "content": {"field": "cases.project.project_id", "value": ["TCGA-BRCA"]}},
         {"op": "in", "content": {"field": "data_type", "value": ["Slide Image"]}},
         {"op": "in", "content": {"field": "experimental_strategy", "value": ["Diagnostic Slide"]}}]}
-    params = {"filters": json.dumps(filt), "fields": "file_id,file_size,cases.submitter_id",
+    params = {"filters": json.dumps(filt), "fields": "file_id,file_size,md5sum,cases.submitter_id",
               "format": "JSON", "size": "20000"}
     hits = requests.get("https://api.gdc.cancer.gov/files", params=params, timeout=120).json()["data"]["hits"]
     df = pd.DataFrame([{"patient": h["cases"][0]["submitter_id"], "file_id": h["file_id"],
-                        "size": h.get("file_size", 0)} for h in hits])
+                        "size": h.get("file_size", 0), "md5": h.get("md5sum")}   # md5 = integrity check
+                       for h in hits])
     df = df[df.patient.isin(surv.index) & df.patient.isin(gene_ok)]
     df = df.sort_values("size").drop_duplicates("patient")          # one slide per patient: smallest
     df = df.merge(surv[["event"]], left_on="patient", right_index=True)
@@ -122,25 +138,65 @@ def tile_features(path):
     return np.concatenate(feats).astype("float16"), np.array(kept, dtype=np.int32)
 
 
+TRIES = 8   # per slide; cheap now that each try resumes instead of restarting
+
+
+def _verified(path, size, md5) -> bool:
+    """True only if the file has GDC's exact byte size and (when known) its MD5 checksum."""
+    if size and os.path.getsize(path) != size:
+        return False
+    if not md5:
+        return True
+    h = hashlib.md5()
+    with open(path, "rb") as fh:
+        for ch in iter(lambda: fh.read(1 << 24), b""):
+            h.update(ch)
+    return h.hexdigest() == md5
+
+
+def _download(r, tmp) -> bool:
+    """Download one slide to `tmp`, RESUMING after a dropped connection instead of restarting.
+
+    Before Sept 27 a dropped connection deleted the partial file, so a 1 GB slide that broke at
+    900 MB started over from zero (about half of all download time was being wasted). Now the
+    partial file is kept and the next try asks GDC only for the missing bytes (HTTP Range request).
+    The finished file must match GDC's exact byte size and MD5 checksum before it is used, so a
+    bad resume can never be featurized; on a mismatch it is deleted and fetched fresh.
+    """
+    url = f"https://api.gdc.cancer.gov/data/{r.file_id}"
+    size, md5 = int(r.size or 0), getattr(r, "md5", None)
+    for attempt in range(TRIES):
+        have = os.path.getsize(tmp) if os.path.exists(tmp) else 0
+        if size and have > size:                 # longer than the real file -> not a valid partial
+            os.remove(tmp)
+            have = 0
+        try:
+            if not size or have < size:
+                hdr = {"Range": f"bytes={have}-"} if have else {}
+                with requests.get(url, stream=True, timeout=(30, 300), headers=hdr) as resp:
+                    resp.raise_for_status()
+                    mode = "ab" if resp.status_code == 206 else "wb"   # 206 = rest of file; 200 = whole file
+                    with open(tmp, mode) as fh:
+                        for ch in resp.iter_content(1 << 20):
+                            fh.write(ch)
+            if _verified(tmp, size, md5):
+                return True
+            print(f"  checksum mismatch {r.patient}: deleting and re-downloading", flush=True)
+            os.remove(tmp)
+        except Exception as e:
+            print(f"  download fail {r.patient} (try {attempt + 1}/{TRIES}, had {have / 1e6:.0f} MB): "
+                  f"{repr(e)[:60]}", flush=True)
+            _wait_for_gdc()                          # outage -> pause here instead of skipping patients
+            time.sleep(30 * min(attempt + 1, 4))     # back off before retrying
+    return False
+
+
 def process(r, total):
     fp = os.path.join(TILES_FULL_DIR if FULL else TILES_DIR, f"{r.patient}.npy")
     if _have(r.patient):
         return
     tmp = f"/tmp/{r.file_id}.svs"
-    url = f"https://api.gdc.cancer.gov/data/{r.file_id}"
-    ok = False
-    for attempt in range(4):
-        try:
-            with requests.get(url, stream=True, timeout=(30, 300)) as resp:
-                resp.raise_for_status()
-                with open(tmp, "wb") as fh:
-                    for ch in resp.iter_content(1 << 20):
-                        fh.write(ch)
-            ok = True
-            break
-        except Exception:
-            if os.path.exists(tmp):
-                os.remove(tmp)
+    ok = _download(r, tmp)
     try:
         if ok:
             v, xy = tile_features(tmp)
@@ -150,7 +206,7 @@ def process(r, total):
     except Exception as e:
         print(f"  featurize fail {r.patient}: {repr(e)[:50]}", flush=True)
     finally:
-        if os.path.exists(tmp):
+        if ok and os.path.exists(tmp):   # a failed download keeps its partial file so the next run resumes it
             os.remove(tmp)
     with _dlock:
         _done["n"] += 1
@@ -171,7 +227,13 @@ def main():
         return
     with ThreadPoolExecutor(max_workers=WORKERS) as ex:
         list(ex.map(lambda r: process(r, len(todo)), todo))
-    print("ALL DONE. saved:", _saved(), flush=True)
+    # Only claim "ALL DONE" if every patient really has features; otherwise say how many are
+    # missing (re-running retries just those — finished patients are skipped).
+    missing = sum(not _have(r.patient) for r in sl.itertuples())
+    if missing == 0:
+        print("ALL DONE. saved:", _saved(), flush=True)
+    else:
+        print(f"FINISHED WITH {missing} MISSING (re-run to retry). saved: {_saved()}", flush=True)
 
 
 if __name__ == "__main__":

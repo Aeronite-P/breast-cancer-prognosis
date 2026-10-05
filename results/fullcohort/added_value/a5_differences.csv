@@ -1,0 +1,8 @@
+metric,difference,ci_lo,ci_hi
+"time-dependent AUC, full - clinical (mean over 1-8 yr)",0.015,-0.03,0.059
+"time-dependent AUC, full - clinical (1 yr)",-0.009,-0.083,0.078
+"time-dependent AUC, full - clinical (3 yr)",0.006,-0.059,0.072
+"time-dependent AUC, full - clinical (5 yr)",0.016,-0.037,0.069
+"Brier at 3 yr, full - clinical (negative = full better)",-0.0036,-0.0082,0.0009
+"Brier at 5 yr, full - clinical (negative = full better)",-0.0061,-0.0152,0.0028
+"C-index, full - clinical (Entry 13): largest gain the data allow = upper CI bound",0.003,-0.037,0.044

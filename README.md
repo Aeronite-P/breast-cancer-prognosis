@@ -4,29 +4,38 @@
 
 ![Python](https://img.shields.io/badge/Python-3.9-3776AB?logo=python&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-success)
-![Status](https://img.shields.io/badge/status-active-brightgreen)
+![Status](https://img.shields.io/badge/status-analysis%20complete-brightgreen)
 ![Data](https://img.shields.io/badge/data-public%20%7C%20reproducible-blue)
+![Pre-registered](https://img.shields.io/badge/analyses-pre--registered-6f42c1)
 
-> A reproducible machine-learning study of breast-cancer survival that combines tumor **gene expression**, **whole-slide histopathology**, and **clinical staging** — validated across independent cohorts and unseen hospitals, built entirely on public data, with a pre-registered plan and honest reporting.
+> A reproducible study of breast-cancer survival that combines tumor **gene expression**, **whole-slide histopathology**, and **clinical staging**, on **every eligible TCGA-BRCA patient (n = 1,033, 146 deaths, 39 hospitals)**, with pre-registered analyses, leakage controls, unseen-hospital validation, and honest reporting of what did and did not hold up.
 >
 > **Researcher:** Shiv Prahalathan · 2026
-> **Status:** Stages A–J complete on a 244-patient cohort · paper figures done · full 1,033-patient TCGA-BRCA run in progress
+> **Status:** full-cohort analysis complete · pre-registered follow-ups (Amendments A–C) complete · manuscript in preparation
 
 ---
 
 ## 📌 TL;DR
 
-On 244 TCGA-BRCA patients from 25 hospitals, a late-fusion model of genes + whole-slide images + clinical staging reached a **C-index of 0.666** (**0.660 ± 0.008** across 5 seeds) versus **0.632 for clinical staging alone**. It held up on hospitals it never trained on (**0.648**) and passed a shuffled-label leakage check. The gain over staging (+0.034) is a consistent trend that is **not yet statistically significant**.
+- **The slide AI finds real, hospital-robust survival signal.** Out-of-fold C-index **0.641** for images alone, and **0.640 on hospitals it never trained on** (39 hospitals).
+- **That signal is independent of staging** (pre-registered primary test): in a Cox model with age, stage, T and N, the image risk has **HR 1.40 per SD [1.20, 1.62], p = 2.5 × 10⁻⁵**. It is almost uncorrelated with stage (ρ = 0.02) and survives adjustment for tissue composition (HR 1.29), slide file size (HR 1.38), halving the tiles (HR 1.41), and removing non-tissue tiles (HR 1.37).
+- **But it barely improves ranking beyond staging.** Clinical staging alone reaches **0.722**; the best combination (learned weights, nested CV) reaches **0.738** (+0.017, 95% CI [−0.011, +0.045], p = 0.21). The data rule out gains larger than about +0.045.
+- **A promising early result did not replicate.** On a hand-picked 244-patient sample (50% deaths) the gain looked like +0.034; on all 1,033 patients it was +0.003. Both are reported.
+
+C-index = how often the model ranks the patient who died sooner as higher-risk (0.5 = chance, 1.0 = perfect). HR = hazard ratio (how many times higher the death rate is per step up in the score).
+
+![Pipeline](results/figures/fig1_pipeline.png)
 
 ## ✨ Highlights
 
-- 🏥 **Generalizes to unseen hospitals** — site-held-out C-index **0.648** for the full model; every model's confidence interval stays above chance.
-- 🔁 **Cross-cohort gene validation** — trained on METABRIC (microarray), tested on TCGA (RNA-seq): **0.652**.
-- 🛡️ **Leakage and stability checks** — shuffled survival labels drop every model to 0.45–0.53 (chance); 5 random seeds give 0.660 ± 0.008; all headline numbers reproduce exactly from a fresh run.
-- ⏱️ **Stays ahead of staging over time** — time-dependent AUC **0.696 vs 0.649**, largest at 3 years (0.70 vs 0.63).
-- 🧩 **Complementary signals** — image risk and gene risk correlate only **r = 0.19**; among patients the gene model calls low-risk, image risk still ranks deaths at **C = 0.595**.
-- 🔬 **Caught a confound** — a naive imaging model scored 0.907 because slide file size tracked outcome; size-matched sampling removed it (size alone → 0.496).
-- 🧠 **Method matters** — generic ImageNet features found nothing (0.504); a pathology foundation model (Phikon) with attention-MIL found real signal (0.603).
+- 🏥 **Unseen hospitals** — leave-one-hospital-out testing across 39 sites: images 0.640, full model 0.712.
+- 🧾 **Pre-registered** — the analysis plan (June) and three amendments (Oct 2–4) were written *before* the analyses they cover ([`PREREGISTRATION.md`](PREREGISTRATION.md) §11–14).
+- 🔬 **Caught a fake signal** — a naive image model scored 0.907 because slide file size tracked outcome; it was rejected, and file size is checked in every later analysis.
+- 🛡️ **Leakage controls** — scrambled outcomes give 0.496 (10 shuffles); five seeds give 0.715 ± 0.006; retrained models reproduce cached predictions to ~1e-15.
+- 🎯 **Well calibrated** — predicted 3- and 5-year survival falls inside the observed 95% CI in all 20 quintile groups; Brier 0.132 vs 0.138 (clinical) at 5 years.
+- 🧠 **Where the AI looks** — half its attention goes to stroma-rich tissue (21% of tiles); tissue composition alone barely predicts survival (C 0.532).
+- 🔁 **Cross-cohort gene validation** — trained on METABRIC (microarray), tested on TCGA (RNA-seq): 0.652.
+- 📦 **Verifiable** — pinned environment, a 1,033-patient manifest with GDC slide MD5s and feature SHA-256s, and checksums for every result file ([`reproducibility/`](reproducibility/)).
 
 ## ❓ The Question
 
@@ -36,75 +45,103 @@ On 244 TCGA-BRCA patients from 25 hospitals, a late-fusion model of genes + whol
 
 | Dataset | Modality | Size | Role |
 |---|---|---|---|
-| **METABRIC** | gene expression (microarray) + survival | ~1,980 patients | Gene-model training |
-| **TCGA-BRCA** | gene expression (RNA-seq) + clinical + survival | ~1,069 patients | Gene external validation |
-| **TCGA-BRCA slides** | diagnostic whole-slide images (GDC) | 244 patients (size-matched) → 1,033 (in progress) | Imaging survival + fusion |
-| **BreakHis** | histopathology images | ~9,000 images | Image classifier (pipeline check) |
+| **TCGA-BRCA** | diagnostic whole-slide images (GDC) + RNA-seq (PAM50) + clinical + survival | **1,033 patients, 146 deaths, 39 hospitals** | Main study |
+| **METABRIC** | gene expression (microarray) + clinical + survival | 1,980 patients | Gene model development; external validation |
+| **BreakHis** | histopathology images | ~9,000 images | Image-pipeline check |
 
-Provenance and citations: [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md).
+How 1,082 TCGA-BRCA patients became the 1,033 analysed: [Figure S1](results/figures/figS1_cohort_flow.png). Provenance and citations: [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md).
 
 ## ⚙️ Methods
 
-- **Survival models:** Cox proportional hazards (clinical, genes); 5-fold out-of-fold **C-index** with 95% bootstrap CIs (0.5 = chance).
-- **Imaging:** each slide is cut into up to 200 tissue tiles → **Phikon** pathology-model embeddings (768-d per tile) → **gated attention-MIL** with a Cox head, which learns which tiles matter.
-- **Fusion:** **late fusion** — the sum of z-scored risk scores from separately trained arms.
-- **Validation:** random 5-fold · **leave-site-out** (GroupKFold over 25 hospitals, so test hospitals are never seen in training) · METABRIC → TCGA for genes.
-- **Integrity:** shuffled-label negative control, 5-seed stability, slide-size confound gate, pre-registered plan ([`PREREGISTRATION.md`](PREREGISTRATION.md)), and a dated [`LAB_NOTEBOOK.md`](LAB_NOTEBOOK.md) entry for every step.
+- **Slides → tiles → features:** up to 200 tissue tiles per diagnostic slide (224 px, ~20×) → **Phikon** pathology foundation model (768 numbers per tile; pretrained without outcomes). Slides are verified against GDC's MD5 and deleted after feature extraction.
+- **Models:** gated **attention-MIL** with a Cox loss (images); linear Cox-loss model (50 PAM50 genes); Cox model (age, AJCC stage, T, N).
+- **Fusion:** late fusion of z-scored risks — equal weights, and weights learned with **nested cross-validation**.
+- **Validation:** 5-fold out-of-fold predictions · leave-one-hospital-out · METABRIC → TCGA (genes) · models trained on the original 244 tested on the 789 new patients.
+- **Statistics:** bootstrap 95% CIs; paired-bootstrap ΔC; Cox likelihood-ratio tests; time-dependent AUC; Kaplan-Meier + log-rank; calibration and Brier at 3 and 5 years; decision curves; Holm correction for subgroups.
+- **Shortcut checks:** slide-size confound; tissue composition from k-means clustering of all 206,488 tiles; cluster examples verified against the saved features; fat sub-cluster test.
+- All settings: [Table S1](results/supplement/table_s1_settings.md). Every script: [`docs/SCRIPTS.md`](docs/SCRIPTS.md). Every step, dated: [`LAB_NOTEBOOK.md`](LAB_NOTEBOOK.md) (Entries 1–16).
 
-## 📈 Results (TCGA-BRCA, n = 244, 123 deaths, 25 hospitals)
+## 📈 Results — full cohort (n = 1,033, 146 deaths, 39 hospitals)
 
-![C-index by modality](results/figures/fig2_cindex_forest.png)
+![C-index by model](results/figures/fullcohort/fig2_cindex_forest.png)
 
 | Model | Random 5-fold | Unseen hospitals |
 |---|---|---|
-| Clinical (age + TNM) | 0.632 [0.57–0.69] | 0.641 [0.58–0.70] |
-| Genes (PAM50) | 0.611 [0.56–0.67] | 0.595 [0.53–0.65] |
-| Images (Phikon + attention-MIL) | 0.603 [0.54–0.66] | 0.577 [0.52–0.64] |
-| Genes + images | 0.639 [0.58–0.69] | 0.607 [0.55–0.66] |
-| Images + clinical | 0.657 [0.60–0.71] | 0.639 [0.58–0.69] |
-| **Genes + images + clinical** | **0.666 [0.61–0.72]** | **0.648 [0.59–0.70]** |
+| Clinical (age + TNM) | 0.722 [0.67–0.77] | 0.728 [0.68–0.77] |
+| Genes (PAM50) | 0.618 [0.56–0.68] | 0.605 [0.54–0.67] |
+| Images (Phikon + attention-MIL) | 0.641 [0.59–0.69] | 0.640 [0.59–0.69] |
+| Genes + images | 0.661 [0.60–0.71] | 0.649 [0.59–0.70] |
+| Images + clinical | 0.734 [0.68–0.78] | 0.724 [0.67–0.77] |
+| Genes + images + clinical (equal weights) | 0.724 [0.67–0.77] | 0.712 [0.66–0.76] |
+| **Genes + images + clinical (learned weights, nested CV)** | **0.738 [0.69–0.78]** | — |
 
-Full model vs clinical alone: **ΔC = +0.034, 95% CI [−0.017, +0.086]** — a trend, not significant at this sample size.
+**Does the image score add information beyond staging?** (Cox likelihood-ratio tests; HR per 1 SD of image risk)
 
-| Discrimination over time | Kaplan-Meier risk groups |
+| Model | HR [95% CI] | p |
+|---|---|---|
+| age + stage + T + N **+ image** (pre-registered primary) | **1.40 [1.20, 1.62]** | **2.5 × 10⁻⁵** |
+| … image risk from leave-one-hospital-out models | 1.28 [1.08, 1.51] | 0.005 |
+| … also adjusted for slide file size | 1.38 | 4.4 × 10⁻⁵ |
+| … also adjusted for tissue composition (k = 8 / k = 12) | 1.29 / 1.28 | 0.002 / 0.004 |
+| … image model trained on 100 tiles per patient | 1.41 [1.21, 1.64] | 2.0 × 10⁻⁵ |
+| … image model re-trained without non-tissue tiles (Amendment C) | 1.37 [1.18, 1.59] | 5.5 × 10⁻⁵ |
+
+All sensitivity analyses: [Table S2](results/supplement/table_s2_sensitivity.md).
+
+| Calibration (3 and 5 years) | Decision curves |
 |---|---|
-| ![Time-dependent AUC](results/figures/fig4_time_auc.png) | ![KM curves](results/figures/fig3_km_risk_groups.png) |
+| ![Calibration](results/figures/fullcohort/fig7_calibration.png) | ![Decision curves](results/figures/fullcohort/fig9_decision_curves.png) |
 
-![Complementarity](results/figures/fig5_complementarity.png)
+| Where the image model looks | Which genes drive the gene score |
+|---|---|
+| ![Attention by tissue cluster](results/figures/fullcohort/fig11_attention_by_cluster.png) | ![Gene SHAP](results/figures/fullcohort/fig14_gene_shap.png) |
 
-Cohort characteristics: [`results/table1_cohort.md`](results/table1_cohort.md) · all metrics: [`results/`](results/)
+### What changed between the hand-picked 244 and all 1,033 patients
 
-**Earlier stages:** gene model METABRIC → TCGA **0.652**; the full ~20,000-gene transcriptome did no better than the 50-gene PAM50 panel (~0.60); BreakHis benign-vs-malignant classifier **AUC 0.84**.
+![244 vs 1,033](results/figures/fullcohort/fig8_244_vs_full.png)
+
+The original 244 patients were a size-matched case/control sample with 50% deaths. In the full, unselected cohort (14% deaths) staging is much stronger (0.632 → 0.722), the image model is slightly stronger (0.603 → 0.641), and the fusion gain over staging shrinks from +0.034 to +0.003. The 244-patient results remain in [`results/`](results/) and Lab Notebook Entries 9–12.
+
+**Earlier stages:** METABRIC → TCGA gene validation 0.652; the full ~20,000-gene transcriptome did no better than PAM50 (~0.60); BreakHis benign-vs-malignant classifier AUC 0.84.
 
 ## ⚠️ Limitations
 
-- The improvement over clinical staging is **not statistically significant** at n = 244.
-- On a simple high/low split, **staging separates survival more sharply** than the full model (HR 2.32 vs 1.81, Fig 3); the multi-modal gain shows up in finer ranking (C-index, time-AUC).
-- The 244-patient cohort is **50% deaths by design** (size-matched case/control) versus ~14% in TCGA overall — the full 1,033-patient run addresses this.
-- "Unseen hospitals" are still within TCGA; no independent public breast cohort has slides + genes + survival (CPTAC-BRCA lacks follow-up).
-- The headline 0.666 is one seed; the 5-seed mean is 0.660.
+- **One data source.** No public breast cohort has slides, genes and survival together (CPTAC-BRCA lacks follow-up), so leave-one-hospital-out testing is quasi-external.
+- **146 deaths, 32-month median follow-up.** Small gains over staging cannot be confirmed; endpoint is death from any cause.
+- **Phikon was pretrained on TCGA images** (without outcomes) — no label leakage, but an independent cohort would remove any familiarity advantage.
+- **Image shortcuts:** composition, slide size, non-tissue and hospital-style checks pass, but tile-cluster labels are a non-expert read pending pathologist review. The tissue filter admits a small share (0.9%) of non-tissue tiles (dark background, red ink), and fat could not be isolated as its own tile group, so a fat-specific effect inside stroma-rich tissue is not ruled out.
+- **Subgroups are exploratory**; decision curves are descriptive.
+- For 7 original-cohort patients with 2 diagnostic slides, the exact slide used cannot be recovered (listed in the manifest).
 - Observational data → **associations, not causation**. A research model, **not a clinical tool**.
+
+## 🤖 AI assistance
+
+Code in this repository was written with the help of an AI coding assistant (Claude). The research questions, analysis decisions, pre-registration, and interpretation are the author's; every result is reproducible from the scripts and verified by the checksums in [`reproducibility/`](reproducibility/).
 
 ## 🗂️ Repository Structure
 
 ```
 ├── README.md · LAB_NOTEBOOK.md · PREREGISTRATION.md · PUBLICATION_ROADMAP.md
-├── REPORT.md                  # early write-up (July, pre-n=244) — superseded by the lab notebook
 ├── config.py                  # studies, gene panel, seed
+├── reproducibility/           # pinned packages, environment, 1,033-patient manifest, result checksums
 ├── src/
-│   ├── fetch_data.py · eda.py            # public data + survival-by-subtype
-│   ├── model.py · validate_external.py   # Stage A: gene survival + METABRIC→TCGA validation
-│   ├── boost_genes.py                    # Stage A+: full transcriptome vs PAM50
-│   ├── stage_c_local.py · stage_c_parallel.py   # Stage C: slide download + ResNet features
-│   ├── stage_c_pathology.py              # Stage C: Phikon tile features (--all = full cohort)
-│   ├── stage_cd.py                       # Stage C/D: confound gate + fusion
-│   ├── stage_e_attmil.py                 # Stage E: attention-MIL survival
-│   ├── stage_f_redundancy.py · stage_g_latefusion.py   # Stages F–G: complementarity, late fusion
-│   ├── stage_h_clinical.py · stage_i_leavesite.py      # Stages H–I: clinical baseline, unseen hospitals
-│   ├── stage_j_metrics.py · make_figures.py            # Stage J: robustness, metrics, paper figures
+│   ├── fetch_data.py · eda.py                          # public data + survival-by-subtype
+│   ├── model.py · validate_external.py · boost_genes.py # gene survival, METABRIC→TCGA, transcriptome
+│   ├── stage_c_local.py · stage_c_parallel.py · stage_c_pathology.py   # slides → Phikon tile features
+│   ├── stage_cd.py · stage_e_attmil.py                 # confound gate, attention-MIL survival
+│   ├── stage_f_redundancy.py · stage_g_latefusion.py   # complementarity, late fusion
+│   ├── stage_h_clinical.py · stage_i_leavesite.py      # clinical baseline, unseen hospitals
+│   ├── stage_j_metrics.py · make_figures.py            # robustness, metrics, figures (n = 244)
+│   ├── stage_k_heatmaps.py                             # attention heatmaps
+│   ├── stage_l_fullcohort.py                           # every analysis on n = 1,033 + calibration
+│   ├── stage_m_added_value.py                          # Amendment A: beyond staging
+│   ├── stage_n_tissue.py                               # Amendment B: tissue composition
+│   ├── stage_o_followups.py                            # Amendment C: fat, robustness, gene SHAP
+│   ├── make_paper_figures.py · make_manifest.py        # Fig 1, supplement, reproducibility package
+│   └── watch_download.py                               # live progress screen for the slide download
 ├── notebooks/                 # Colab notebooks (BreakHis classifier, slide pipeline)
-├── docs/                      # script docs, data sources, Colab guides
-└── results/                   # metrics, cached out-of-fold predictions, figures
+├── docs/                      # script docs, data sources, Colab guides; archive/ = superseded July write-up
+└── results/                   # n = 244 results, fullcohort/ (n = 1,033), supplement/, figures/
 ```
 
 ## ▶️ Reproduce It
@@ -113,24 +150,26 @@ Cohort characteristics: [`results/table1_cohort.md`](results/table1_cohort.md) �
 git clone https://github.com/Aeronite-P/breast-cancer-prognosis.git
 cd breast-cancer-prognosis
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r reproducibility/requirements-lock.txt      # exact versions used
 
-python src/fetch_data.py          # public gene + clinical data (cBioPortal)
-python src/model.py               # Stage A gene survival models
-python src/validate_external.py   # METABRIC → TCGA validation
-python src/stage_c_pathology.py   # download slides + Phikon tile features (~270 GB, resume-safe)
-python src/make_figures.py        # all survival models, robustness checks, figures, Table 1
+python src/fetch_data.py                   # public gene + clinical data (cBioPortal)
+python src/stage_c_pathology.py --all      # every TCGA-BRCA slide → Phikon features (~800 GB downloaded, ~240 MB kept; resumable, MD5-verified)
+python src/stage_l_fullcohort.py           # all models, unseen hospitals, controls, calibration (n = 1,033)
+python src/stage_m_added_value.py          # Amendment A
+python src/stage_n_tissue.py               # Amendment B
+python src/stage_o_followups.py            # Amendment C (robustness, gene SHAP)
+python src/make_paper_figures.py           # Figure 1 + supplement
+
+shasum -a 256 -c reproducibility/results_checksums.sha256   # every result file should say OK
 ```
 
 ## 🗺️ Roadmap
 
-- [x] **A** — gene survival model + cross-cohort validation
-- [x] **B** — histopathology image classifier (BreakHis)
-- [x] **C** — imaging survival (confound caught and fixed; Phikon + attention-MIL)
-- [x] **D–G** — fusion, complementarity, late fusion
-- [x] **H–J** — clinical baseline, unseen-hospital validation, robustness, paper figures
-- [ ] Full 1,033-patient TCGA-BRCA cohort (running)
-- [ ] Attention heatmaps · calibration · manuscript — see [`PUBLICATION_ROADMAP.md`](PUBLICATION_ROADMAP.md)
+- [x] Gene survival model + cross-cohort validation · image classifier · imaging survival (confound caught)
+- [x] Fusion, clinical baseline, unseen-hospital validation, robustness, heatmaps (n = 244)
+- [x] Full 1,033-patient cohort · calibration · decision curves
+- [x] Pre-registered follow-ups: beyond staging (A), tissue composition (B), fat / robustness / genes (C)
+- [ ] Pathologist review of attention heatmaps and tissue clusters · manuscript — see [`PUBLICATION_ROADMAP.md`](PUBLICATION_ROADMAP.md)
 
 ## 📚 Citation & Data
 

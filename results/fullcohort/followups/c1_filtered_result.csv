@@ -1,0 +1,4 @@
+analysis,LR_chi2,p_LRT,HR_per_SD,HR_lo,HR_hi
+image risk without flagged tiles (2b) + clinical vs clinical  [C1 PRIMARY],16.28,5.461616975141026e-05,1.37,1.18,1.59
+reference: original image risk + clinical vs clinical (A1),17.75,2.5206273404346562e-05,1.4,1.2,1.62
+original image risk beyond clinical + flagged-tile fraction  [C1 secondary],17.76,2.5077188041634835e-05,1.4,1.2,1.62

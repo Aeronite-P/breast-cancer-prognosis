@@ -47,6 +47,7 @@ import stage_i_leavesite as ls      # noqa: E402  site-grouped attention-MIL
 SEED = config.RANDOM_SEED
 EXTRA_SEEDS = [1, 7, 123, 2024]     # plus SEED (42) = 5 seeds
 CACHE = os.path.join(config.RESULTS_DIR, "oof_risks.csv")
+COHORT_NAME = "size-matched imaging cohort"   # Table 1 title; stage_l_fullcohort.py overrides it
 FIG = config.FIG_DIR
 
 # validated two-slot palette (dataviz reference palette, all checks pass)
@@ -232,7 +233,7 @@ def plot():
             ax.plot(m.c_index, yi + off, mk, color=color, ms=8, mec=SURFACE, mew=2,
                     label=lab if nm == names[0] else None)
     ax.set_yticks(y); ax.set_yticklabels(names)
-    ax.set_xlim(0.45, 0.75)
+    ax.set_xlim(0.45, max(0.75, float(np.ceil(met.ci_hi.max() * 20) / 20)))   # widen only if a CI would be cut off
     ax.set_xlabel("Concordance index (C-index) with 95% bootstrap CI")
     # value columns sit OUTSIDE the plot area (axes x > 1) so they never touch marks or each other
     for x, head, split in [(1.03, "Random split", "random 5-fold"), (1.30, "Site-held-out", "site-held-out")]:
@@ -243,7 +244,7 @@ def plot():
             ax.text(x, yi, f"{m.c_index:.3f} [{m.ci_lo:.2f}–{m.ci_hi:.2f}]",
                     transform=ax.get_yaxis_transform(), color=TEXT2, fontsize=8, ha="left", va="center")
     ax.legend(loc="upper left", frameon=False, fontsize=8)
-    ax.set_title("Survival discrimination by modality (TCGA-BRCA, n=244, 123 deaths)",
+    ax.set_title(f"Survival discrimination by modality (TCGA-BRCA, n={len(d)}, {int(ev.sum())} deaths)",
                  loc="left", fontsize=11, pad=12)
     fig.savefig(os.path.join(FIG, "fig2_cindex_forest.png"), dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -367,7 +368,7 @@ def table1(df):
     for k in ("LumA", "LumB", "Basal", "Her2", "Normal", "Unknown"):
         row(f"PAM50 {k}, n (%)", lambda m, k=k: f"{(sub[m] == k).sum()} ({100 * (sub[m] == k).mean():.0f}%)")
     row("Tissue-source sites", lambda m: f"{df.site[m].nunique()}")
-    txt = "# Table 1 — Cohort characteristics (TCGA-BRCA, size-matched imaging cohort)\n\n" + "\n".join(lines) + "\n"
+    txt = f"# Table 1 — Cohort characteristics (TCGA-BRCA, {COHORT_NAME})\n\n" + "\n".join(lines) + "\n"
     with open(os.path.join(config.RESULTS_DIR, "table1_cohort.md"), "w") as f:
         f.write(txt)
     print(txt)

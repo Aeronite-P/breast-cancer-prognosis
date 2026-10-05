@@ -1,0 +1,5 @@
+sub_cluster,n_tiles,mean_tile_share,mean_attention_share,enrichment,patients_with_sub,spearman_fraction_vs_image_risk
+2a,25822,0.125,0.2993,2.4,805,-0.266
+2b,1879,0.0091,0.0192,2.11,235,-0.028
+2c,11432,0.0553,0.1377,2.49,564,-0.299
+2d,3588,0.0174,0.0368,2.12,55,-0.21

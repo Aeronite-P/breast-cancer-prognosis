@@ -1,0 +1,7 @@
+quantity,value
+"Spearman(image risk, age)",0.103
+"Spearman(image risk, stage)",0.019
+"Spearman(image risk, t_stage)",0.2
+"Spearman(image risk, n_stage)",0.037
+"Spearman(image risk, gene risk)",0.121
+R2 of image risk explained by age+stage+T+N,0.055

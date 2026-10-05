@@ -1,0 +1,4 @@
+analysis,n,deaths,C_size_alone,ci_lo,ci_hi,spearman_image_vs_size
+primary: unambiguous patients only,1026,144,0.58,0.515,0.641,-0.132
+sensitivity: ambiguous = smallest slide,1033,146,0.575,0.514,0.633,-0.131
+sensitivity: ambiguous = largest slide,1033,146,0.578,0.516,0.636,-0.133

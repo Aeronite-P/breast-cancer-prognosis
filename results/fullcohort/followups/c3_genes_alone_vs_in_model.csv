@@ -1,0 +1,16 @@
+gene,alone_HR_per_SD,alone_p,alone_direction,in_model_direction,same_direction
+BLVRA,0.82,0.018,lower risk,lower risk,True
+UBE2T,1.12,0.163,higher risk,higher risk,True
+PGR,0.87,0.097,lower risk,lower risk,True
+TMEM45B,1.15,0.093,higher risk,higher risk,True
+CXXC5,1.04,0.623,higher risk,higher risk,True
+BCL2,0.83,0.029,lower risk,lower risk,True
+KRT17,0.78,0.001,lower risk,lower risk,True
+BAG1,0.84,0.047,lower risk,lower risk,True
+MLPH,0.96,0.624,lower risk,lower risk,True
+ESR1,1.0,0.977,higher risk,higher risk,True
+ANLN,1.15,0.092,higher risk,higher risk,True
+MKI67,1.07,0.43,higher risk,higher risk,True
+BIRC5,1.02,0.785,higher risk,lower risk,False
+EGFR,0.87,0.104,lower risk,lower risk,True
+GRB7,1.1,0.234,higher risk,higher risk,True

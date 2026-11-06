@@ -1,0 +1,4 @@
+analysis,n,events,LR_chi2,p_LRT,HR_per_SD,HR_lo,HR_hi
++ image vs clinical + PAM50 subtype [D3],1033,146,18.03,2.1697296694019585e-05,1.41,1.21,1.65
+reference: + image vs clinical only (A1),1033,146,19.0,1.3104518444424112e-05,1.41,1.22,1.64
+"+ PAM50 subtype vs clinical only (descriptive, 5 df)",1033,146,11.08,0.049844930120510535,,,

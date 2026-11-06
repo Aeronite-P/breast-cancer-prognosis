@@ -72,7 +72,7 @@ def fig1():
                 sp.set_color(mf.REF)
     ax.text(0.015, y1 + 0.225, "TISSUE SLIDE", fontsize=9, fontweight="bold", color=mf.BLUE)
     ax.text(0.015, y1 - 0.012, "H&E diagnostic slide", fontsize=8.5, color=mf.TEXT2, va="top")
-    ax.text(0.165, y1 - 0.012, "≤ 200 tiles, 224 px at ~20×", fontsize=8.5, color=mf.TEXT2, va="top")
+    ax.text(0.165, y1 - 0.012, "≤ 200 tiles, 224 px, full scan resolution", fontsize=8.5, color=mf.TEXT2, va="top")
     arrow(ax, 0.148, y1 + 0.095, 0.162, y1 + 0.095, mf.BLUE)
     box(ax, 0.335, y1, 0.16, 0.19, "Phikon", "pathology foundation\nmodel (pretrained,\nno outcomes used)\n→ 768 numbers per tile", mf.BLUE)
     arrow(ax, 0.313, y1 + 0.095, 0.333, y1 + 0.095, mf.BLUE)
@@ -159,7 +159,7 @@ def figS1():
 # ------------------------------------------------------------------ tables
 SETTINGS = [
     ("Slides", "Diagnostic H&E slide per patient", "smallest if several (full run); GDC download, MD5-verified"),
-    ("Tiles", "Size / magnification", "224 × 224 px at downsample 2 (~20× on 40× scans)"),
+    ("Tiles", "Size / magnification", "224 × 224 px read at level 0 = full scan resolution (scanner 40× for 900 slides, 20× for 119, unknown 14; intended ~20× was not applied — see PREREGISTRATION §11)"),
     ("Tiles", "Tissue filter", "HSV saturation mean > 25 and value mean < 235"),
     ("Tiles", "Number per patient", "up to 200, taken in a fixed random order (seed 0)"),
     ("Features", "Model", "Phikon (owkin/phikon, ViT), CLS token, 768 numbers per tile"),
@@ -247,11 +247,32 @@ def tableS2():
             rows.append(["  … image model without non-tissue tiles (C1, cluster 2b)", f"HR {r0.HR_per_SD:.2f} [{r0.HR_lo:.2f}, {r0.HR_hi:.2f}]", f"p = {r0.p_LRT:.1e}"])
         else:
             rows.append(["  … fat-free image model (C1)", "not run", "no sub-cluster met the fat rule"])
+    hc = os.path.join(FULL, "healthcheck")
+    if os.path.exists(os.path.join(hc, "d1_other_endpoints.csv")):                      # Amendment D (health check)
+        hr = lambda r: f"HR {r.HR_per_SD:.2f} [{r.HR_lo:.2f}, {r.HR_hi:.2f}]"
+        pick = lambda f, col, key: pd.read_csv(os.path.join(hc, f)).set_index(col).loc[key]
+        for f, col, key, lab in [
+                ("d3_pam50_adjusted.csv", "analysis", "+ image vs clinical + PAM50 subtype [D3]", "  … adjusted for PAM50 subtype (D3)"),
+                ("d5_magnification_adjusted.csv", "analysis", "+ image vs clinical + scan magnification [D5]",
+                 "  … adjusted for scan magnification (D5)"),
+                ("d1_other_endpoints.csv", "endpoint", "progression-free interval [D1 PRIMARY]",
+                 "  … progression-free interval instead of death (D1)"),
+                ("d1_other_endpoints.csv", "endpoint", "disease-specific survival", "  … disease-specific survival (D1)"),
+                ("d2_new_patients_only.csv", "analysis", "frozen image risk (trained on the 244), overall survival",
+                 "  … only the 789 not used to design the methods, frozen model (D2; 23 deaths)"),
+                ("d2_new_patients_only.csv", "analysis", "frozen image risk (trained on the 244), progression-free interval",
+                 "  … same 789, progression-free interval (D2; 58 events)")]:
+            r = pick(f, col, key)
+            rows.append([lab, hr(r), f"p = {r.p_LRT:.2g}"])
     m = R("metrics_final.csv").set_index(["model", "split"])
     rows.append(["Image C-index, random split / unseen hospitals", f"{m.loc[('Images (attention-MIL)', 'random 5-fold'), 'c_index']:.3f} / "
                  f"{m.loc[('Images (attention-MIL)', 'site-held-out'), 'c_index']:.3f}", ""])
     if os.path.exists(os.path.join(fu, "c2a_fewer_tiles.csv")):
         rows.append(["Image C-index, 100 tiles per patient (C2a)", f"{c2a.c_index:.3f} [{c2a.ci_lo:.2f}, {c2a.ci_hi:.2f}]", ""])
+    if os.path.exists(os.path.join(FULL, "healthcheck", "h4_fusion_vs_best_single.csv")):
+        h4 = pd.read_csv(os.path.join(FULL, "healthcheck", "h4_fusion_vs_best_single.csv")).iloc[0]
+        rows.append(["Genes + images vs images alone (H4): ΔC", f"{h4.delta_C:+.3f} [{h4.delta_lo:+.3f}, {h4.delta_hi:+.3f}]",
+                     f"p = {h4.p_two_sided:.2f}"])
     st = R("added_value", "a2_stacking.csv").set_index("model")
     rows.append(["Full model, learned weights (A2): ΔC vs clinical", f"{st.loc['Stacked: genes + images + clinical', 'delta_vs_clinical']:+.3f} "
                  f"[{st.loc['Stacked: genes + images + clinical', 'delta_lo']:+.3f}, {st.loc['Stacked: genes + images + clinical', 'delta_hi']:+.3f}]",

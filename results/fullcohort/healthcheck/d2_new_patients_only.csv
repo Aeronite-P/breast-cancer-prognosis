@@ -1,0 +1,4 @@
+analysis,n,events,LR_chi2,p_LRT,HR_per_SD,HR_lo,HR_hi
+"frozen image risk (trained on the 244), overall survival",789,23,1.66,0.19719818543256287,1.33,0.86,2.05
+"frozen image risk (trained on the 244), progression-free interval",788,58,0.35,0.5549536822132497,1.08,0.83,1.42
+"random 5-fold image risk restricted to the 789, overall survival",789,23,1.15,0.2842855120436088,1.25,0.84,1.84

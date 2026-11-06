@@ -1,0 +1,3 @@
+analysis,n,events,LR_chi2,p_LRT,HR_per_SD,HR_lo,HR_hi
++ image vs clinical + scan magnification [D5],1033,146,19.55,9.82214780286447e-06,1.42,1.22,1.65
+reference: + image vs clinical only (A1),1033,146,19.0,1.3104518444424112e-05,1.41,1.22,1.64

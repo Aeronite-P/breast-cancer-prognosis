@@ -1,11 +1,11 @@
 model,outer_fold,w_clin,w_img,w_gene
-Stacked: genes + images + clinical,1,0.479,0.18,0.105
-Stacked: images + clinical,1,0.486,0.194,
-Stacked: genes + images + clinical,2,0.412,0.156,0.236
-Stacked: images + clinical,2,0.431,0.176,
-Stacked: genes + images + clinical,3,0.535,0.32,0.036
-Stacked: images + clinical,3,0.54,0.321,
-Stacked: genes + images + clinical,4,0.405,0.309,0.19
-Stacked: images + clinical,4,0.425,0.343,
-Stacked: genes + images + clinical,5,0.38,0.27,0.056
-Stacked: images + clinical,5,0.384,0.275,
+Stacked: genes + images + clinical,1,0.555,0.183,0.089
+Stacked: images + clinical,1,0.564,0.196,
+Stacked: genes + images + clinical,2,0.539,0.169,0.214
+Stacked: images + clinical,2,0.566,0.19,
+Stacked: genes + images + clinical,3,0.662,0.311,0.04
+Stacked: images + clinical,3,0.667,0.312,
+Stacked: genes + images + clinical,4,0.555,0.308,0.156
+Stacked: images + clinical,4,0.583,0.334,
+Stacked: genes + images + clinical,5,0.561,0.241,0.044
+Stacked: images + clinical,5,0.565,0.246,

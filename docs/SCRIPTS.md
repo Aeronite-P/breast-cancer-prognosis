@@ -231,6 +231,33 @@ without the blank-slide patient. **C3** exact SHAP values for the linear gene mo
 
 ---
 
+## `src/stage_p_healthcheck.py`  (pre-writing health check, 2026-10-21/22)
+**What:** Gaps found by the audit before writing (LAB_NOTEBOOK Entry 17; PREREGISTRATION §11 and §15).
+`h4` — the original primary hypothesis on the full cohort (genes + images vs images alone: paired-bootstrap ΔC
+and LRT). `clinical-verify` / `clinical-apply` — after the AJCC stage-parsing fix, recompute ONLY the clinical
+columns of every cached risk file with the original folds and imputation (verify reproduced the old values to
+≤ 4.4e-16 before the fix). `scan-magnification` — reads each slide's scanner magnification and µm/px from its
+TIFF header on GDC with a few byte-range requests (no full download; failed lookups are retried on re-run).
+`amendment-d` — A1 with progression-free interval and disease-specific survival (D1), in the 789 patients not
+used to design the methods (D2), with PAM50 subtype (D3), a plain-language median split (D4), and with scan
+magnification (D5).
+**Produces:** `results/fullcohort/healthcheck/`.
+**Run:** `python src/stage_p_healthcheck.py h4 | clinical-verify | clinical-apply | scan-magnification | amendment-d`
+(seconds each; `scan-magnification` ~1 h)
+
+---
+
+## `src/stage_q_encoders.py`  (Amendment E: non-TCGA foundation model, true-20× tiles)
+**What:** PREREGISTRATION.md §16. `tiles` re-downloads each of the 1,026 known slides (resume + MD5), caches the
+native tile set (checked against the saved Phikon features) and a 0.5 µm/px tile set, embeds the 20× set with
+Phikon, deletes the slide. `gigapath` embeds both cached sets with Prov-GigaPath (needs `huggingface-cli login`
+and its accepted terms). `analyze` re-trains the image model per arm and runs the A1 tests.
+**Produces:** `data/stage_q_tiles/`, `data/stage_q_feats/` (git-ignored), `results/fullcohort/encoders/`.
+**Run:** `nohup caffeinate -i python src/stage_q_encoders.py tiles > data/logs/stage_q_tiles.log 2>&1 &` (~4 days)
+· `python src/stage_q_encoders.py gigapath` (hours) · `python src/stage_q_encoders.py analyze` (~2–3 h)
+
+---
+
 ## `src/make_paper_figures.py`  (Figure 1 + supplement)
 **What:** Draws Figure 1 (pipeline), Figure S1 (cohort flow from 1,082 to 1,033 patients — every count computed
 from the data), Table S1 (all model/analysis settings) and Table S2 (every sensitivity result, read from the

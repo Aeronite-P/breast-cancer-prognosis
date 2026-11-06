@@ -40,7 +40,8 @@ TILES_DIR = os.path.join(config.DATA_DIR, "stage_c_tiles")   # per-tile feature 
 TILES_FULL_DIR = os.path.join(config.DATA_DIR, "stage_c_tiles_full")  # new patients, full cohort
 COORDS_DIR = os.path.join(config.DATA_DIR, "stage_c_coords")  # level-0 (x, y, size) per saved tile
 FULL = "--all" in sys.argv
-DOWNSAMPLE = 2        # ~20x on 40x-scanned slides (Phikon's training regime)
+DOWNSAMPLE = 2        # intended ~20x, but these slides have no 2x level: get_best_level_for_downsample(2)
+                      # returns level 0, so tiles are at FULL scan resolution (PREREGISTRATION §11, 2026-10-21)
 TILE = 224
 MAX_TILES = 200
 WORKERS = 8

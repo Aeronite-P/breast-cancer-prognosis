@@ -1,8 +1,8 @@
 model,c_index,ci_lo,ci_hi
-Clinical (age + TNM),0.759,0.622,0.876
+Clinical (age + TNM),0.791,0.665,0.891
 Genes (PAM50),0.688,0.58,0.781
 Images (attention-MIL),0.616,0.488,0.743
 Genes + images,0.695,0.572,0.801
-Images + clinical,0.75,0.626,0.865
-Genes + images + clinical,0.776,0.654,0.878
-Full model minus clinical (delta C),0.018,-0.071,0.121
+Images + clinical,0.767,0.656,0.876
+Genes + images + clinical,0.786,0.671,0.885
+Full model minus clinical (delta C),-0.004,-0.095,0.096

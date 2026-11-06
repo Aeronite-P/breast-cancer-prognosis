@@ -1,9 +1,9 @@
 model,year,auc
-Clinical (age + TNM),1,0.727
-Clinical (age + TNM),3,0.629
-Clinical (age + TNM),5,0.639
-Clinical (age + TNM),mean,0.649
-Genes + images + clinical,1,0.748
-Genes + images + clinical,3,0.699
-Genes + images + clinical,5,0.684
-Genes + images + clinical,mean,0.696
+Clinical (age + TNM),1,0.807
+Clinical (age + TNM),3,0.694
+Clinical (age + TNM),5,0.669
+Clinical (age + TNM),mean,0.693
+Genes + images + clinical,1,0.783
+Genes + images + clinical,3,0.726
+Genes + images + clinical,5,0.69
+Genes + images + clinical,mean,0.712

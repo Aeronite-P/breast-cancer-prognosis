@@ -1,3 +1,3 @@
 model,hazard_ratio,hr_lo,hr_hi,logrank_p
-Clinical model (age + TNM),2.89,2.03,4.1,5.739792986116108e-10
-Multi-modal (genes + images + clinical),2.75,1.96,3.85,9.38706322852991e-10
+Clinical model (age + TNM),2.41,1.7,3.4,2.688918723403793e-07
+Multi-modal (genes + images + clinical),2.8,2.0,3.92,4.615462255164164e-10

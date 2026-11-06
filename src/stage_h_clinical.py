@@ -40,7 +40,8 @@ def load_clinical():
     def stage_ord(s):
         s = str(s).upper()
         for pat, val in [("IV", 4), ("III", 3), ("II", 2), ("I", 1)]:
-            if re.search(r"STAGE\s+" + pat + r"\b", s) or s.strip() == pat:
+            # sub-stage letter allowed ("STAGE IIA" -> 2); before 2026-10-21 these were missed (§11)
+            if re.search(r"STAGE\s+" + pat + r"[ABC]?\b", s) or s.strip() == pat:
                 return val
         return np.nan
 

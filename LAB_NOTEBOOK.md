@@ -829,3 +829,139 @@ A1/A2/A3/A5 tables byte-identical)
 - Fat could not be isolated as a cluster, so "no fat shortcut" is not proven — only that no fat-dominated
   tile group exists and that the image signal survives every composition-based adjustment tried.
 - Pathologist review of figs 12–13 is still needed.
+
+---
+
+## Entry 17 — 2026-10-21/22 · Pre-writing health check: a stage bug, a magnification error, and Amendment D
+
+**What was done**
+- A reviewer-style audit before writing the paper (code, records, data). Fixed problems and ran the
+  missing checks in this order, each logged in PREREGISTRATION §11 before it was run:
+  1. **H4 (the original primary) on the full cohort** — never formally run at n = 1,033 (Entry 13 compared
+     everything with clinical only). Run exactly as §7 specified. Code: `src/stage_p_healthcheck.py h4`.
+  2. **Bug: AJCC stage parsing.** `stage_h_clinical.load_clinical()` recognized only labels written exactly
+     "STAGE I/II/III/IV"; every sub-stage (IA, IIA, IIB, IIIA …) became missing and was median-imputed to
+     stage I. In the 1,033: 1,007 patients were coded stage 1, 6 stage 2, 2 stage 3, 18 stage 4 (correct:
+     172 / 591 / 234 / 18, 18 unknown; Table 1 used separate, correct code). So the clinical model had age,
+     T, N and in effect a stage-IV flag. **Fixed** (sub-stage letter allowed). Before the fix, a recomputation
+     of every cached clinical-risk column (20 columns in 8 files) reproduced the saved values (max |diff|
+     ≤ 4.4e-16); after it, only the clinical columns were rewritten (`clinical-verify` / `clinical-apply`).
+     Image and gene risks do not use stage and are byte-for-byte unchanged. Then every downstream script
+     was re-run unchanged: `make_figures.py` (n = 244), `stage_l_fullcohort.py`, `stage_m_added_value.py`
+     (its fold-1 retrain check: max |diff| 1.8e-15), `stage_n_tissue.py`, `stage_o_followups.py`
+     (`--c1-filter` and default), `make_paper_figures.py`.
+  3. **Amendment D** (PREREGISTRATION §15, written before running): A1 with other endpoints, in the 789
+     patients not used to design the methods, with PAM50 subtype, and with scan magnification (D5, added
+     before any D result was seen). Code: `src/stage_p_healthcheck.py amendment-d`.
+  4. **Magnification error found:** `get_best_level_for_downsample(2)` returns level 0 on these slides, so
+     every tile was cut at full scan resolution, not ~20× as the code comment, README and Table S1 said
+     (all 789 saved coordinate files show 224-px tiles at level 0; the original 244 used the same code).
+     Scanner magnification was read from each slide header on GDC with small byte-range requests
+     (`healthcheck/scan_magnification.csv`): **40× for 900 slides, 20× for 119, unknown 14** (7 ambiguous
+     slides, 7 headers without AppMag). So ~87% of tiles are ~0.25 µm/px (Phikon was trained at 0.5).
+     Documentation corrected; tested as D5.
+  5. **Phikon pretraining overlap** (background search of the Phikon paper and supplement): Phikon was
+     pretrained (no labels) on 1,124 TCGA-BRCA diagnostic slides from 1,060 patients; the slide list is not
+     published, but by count at least 1,031 of our 1,033 patients' slides were almost certainly in it.
+  6. Also recorded: the clinical baseline lacks grade and ER/PR/HER2 because this dataset has no such fields
+     (logged in §11); imputation medians were computed before the folds (outcome-free); TCGA-OL-A66H has no
+     PFI/DSS time; only 6 patients had neoadjuvant treatment.
+
+**Results — H4 (original primary), n = 1,033, unaffected by the stage fix**
+| Split | Genes + images vs images alone: ΔC [95% CI], p | LRT for adding gene risk to image risk |
+|---|---|---|
+| Random 5-fold (primary) | +0.019 [−0.023, +0.062], p = 0.38 (P(not better) 0.19) | HR 1.24 [1.07, 1.45], p = 0.006 |
+| Site-held-out | +0.010 [−0.037, +0.057], p = 0.69 | HR 1.14 [0.97, 1.34], p = 0.12 |
+→ **H4 not supported** by its pre-specified criterion (ΔC > 0): the C-index gain is small and not significant.
+Genes do carry some information beyond images on random folds (LRT p = 0.006), not on unseen hospitals.
+
+**Results — corrected vs pre-fix (pre-fix values in git commit b8b8fce)**
+| Quantity | Pre-fix | Corrected |
+|---|---|---|
+| Clinical C-index, random / site-held-out (n = 1,033) | 0.722 / 0.728 | **0.733 / 0.740** |
+| Equal-weight full model; ΔC vs clinical | 0.724; +0.003 | **0.731; −0.001 [−0.041, +0.040]** |
+| Images + clinical | 0.734 | 0.739 |
+| Learned weights (A2): C; ΔC; p | 0.738; +0.017; 0.21 | **0.748; +0.016 [−0.005, +0.036]; 0.13** |
+| Genes / images vs clinical, ΔC | −0.103 / −0.079 | −0.114 / −0.090 (both significant) |
+| **A1 primary: image HR per SD beyond age + stage + T + N** | 1.40 [1.20, 1.62], p = 2.5e-5 | **1.41 [1.22, 1.64], p = 1.3e-5** |
+| A1 site-held-out image risk | 1.28, p = 0.005 | 1.27 [1.08, 1.49], p = 0.006 |
+| A1 secondary: gene risk beyond clinical + image | 1.18, p = 0.045 | **1.14 [0.97, 1.35], p = 0.11 (no longer significant)** |
+| Spearman image risk vs stage | 0.02 | **0.13** |
+| Proportional hazards (Schoenfeld) | image 0.83; T 0.04 | image 0.83; **stage 0.013** |
+| Size-adjusted (A4) / composition k = 8 (B3) | 1.38 / 1.29 | 1.40 (p = 2.3e-5) / 1.31 (p = 0.0016) |
+| Composition beyond clinical + image (B3 secondary) | p = 0.13 | **p = 0.026** |
+| Non-tissue tiles removed (C1) / 100 tiles (C2a) | 1.37 / 1.41 | 1.38 (p = 4.1e-5) / 1.42 (p = 1.4e-5) |
+| Fixed weightings (C2b), ΔC vs clinical | +0.003 to +0.019 | −0.001 to +0.016, all p ≥ 0.15 |
+| Time-AUC, mean 1–8 yr: clinical / full | 0.716 / 0.731 | 0.721 / 0.736 (diff +0.015 [−0.028, +0.061]) |
+| Brier 5 yr: clinical / full | 0.138 / 0.132 | 0.136 / 0.132 (diff −0.0038 [−0.0124, +0.0052]) |
+| KM median split HR: clinical / full | 2.89 / 2.75 | 2.41 / 2.80 |
+| Frozen 244 → 789: clinical / full; ΔC | 0.759 / 0.776; +0.018 | 0.791 / 0.786; −0.004 [−0.095, +0.096] |
+| Shuffled outcomes, clinical (10 shuffles) | 0.490 | 0.485 |
+| Full model over 5 seeds | 0.715 ± 0.006 | 0.723 ± 0.005 |
+| n = 244: clinical C; full − clinical | 0.632; +0.034 | **0.665; +0.017 [−0.032, +0.064]** |
+- Calibration: still 20 / 20 quintile cells inside the KM 95% CI (largest gap 0.057). Subgroups (A3): all
+  Holm p = 1.0. Decision curve, 5 yr at 40%: full 0.020 vs clinical 0.011 (descriptive).
+
+**Results — Amendment D (A1 sensitivity checks, corrected stage)**
+| Check | Image HR per SD [95% CI] | p |
+|---|---|---|
+| D1(a) progression-free interval (n = 1,032, 139 events) — D primary | **1.26 [1.08, 1.48]** | 0.0044 |
+| D1(b) disease-specific survival (n = 1,013, 79 events) | **1.52 [1.24, 1.85]** | 8.0e-5 |
+| D2 frozen model, 789 new only, overall survival (23 deaths) | 1.33 [0.86, 2.05] | 0.20 |
+| D2 frozen model, 789 new only, progression-free (58 events) | 1.08 [0.83, 1.42] | 0.55 |
+| D2 out-of-fold risk, 789 new only, overall survival | 1.25 [0.84, 1.84] | 0.28 |
+| D3 + PAM50 subtype (subtype itself: p = 0.050, 5 df) | **1.41 [1.21, 1.65]** | 2.2e-5 |
+| D5 + scan magnification | **1.42 [1.22, 1.65]** | 9.8e-6 |
+- D4 (descriptive): below- vs above-median image risk — 10.6% vs 17.6% died; 5-year KM survival 87.6% vs
+  74.0%; HR 2.51 [1.80, 3.52], log-rank p = 2.9e-8.
+- D5 (descriptive): image risk 40× vs 20× scans, Mann-Whitney p = 0.079; image C within 40× scans 0.632.
+- C-index for other endpoints: PFI clinical 0.659 / image 0.613; DSS clinical 0.736 / image 0.679.
+
+**Why it matters**
+- **The primary finding survives the bug fix and every new check:** the image score carries information
+  beyond correctly coded age + stage + T + N (HR 1.41, p = 1.3e-5), and stays significant for progression,
+  for cancer-specific death (where it is strongest, HR 1.52), after adjusting for PAM50 subtype, and after
+  adjusting for scan magnification (all pre-specified to count as "robust" — §15 rule met).
+- **The fresh-patient check (D2) does not confirm it.** In the 789 patients whose outcomes never influenced
+  design choices, the overall-survival HR points the same way (1.25–1.33) but the CIs include 1 (23 deaths),
+  and for progression the frozen model is near null (1.08). This is the weakest point and must be reported.
+- **Several claims change and must not be used any more:** "image risk is unrelated to stage (0.02)" → weak
+  correlation 0.13; "genes add information beyond clinical + image (p = 0.045)" → not significant (p = 0.11);
+  "staging looked weak at n = 244 (0.632) and the +0.034 gain did not replicate" → part of that weakness was
+  the bug (0.665 corrected) and the corrected n = 244 gain is +0.017 (n.s.); ranking gain over staging stays
+  non-significant everywhere (equal weights −0.001; learned weights +0.016, p = 0.13).
+- H4, the original primary, is formally not supported.
+
+**Assumptions**
+- AppMag from the slide header is the scanner's magnification; the 20× group's µm/px values vary
+  (0.23–0.50), so "20×" is the scanner label, not an exact pixel size.
+- `lifelines` step size 0.5 (instead of 0.95) in the Amendment D fits: the default diverged on the PFI fit;
+  the same maximum is reached (A1 reproduces exactly).
+
+**Limitations**
+- The image model and tiles still use Phikon, pretrained on (almost certainly) these same slides, and tiles
+  at ~0.25 µm/px for most slides. Neither can be fixed without re-downloading the slides (~1.04 TB).
+- D2 has little power (23 deaths); it can neither confirm nor rule out the effect in fresh patients.
+
+---
+
+## Entry 18 — 2026-10-25 · Amendment E started: a foundation model not trained on TCGA, and true-20× tiles (IN PROGRESS)
+
+**What was done**
+- Amendment E (PREREGISTRATION §16) written before running: re-download the 1,026 patients with a known
+  slide; cache two tile sets per patient — *native* (the tiles analysed so far) and *20×* (0.5 µm/px from the
+  header pixel size); embed with Phikon (now) and Prov-GigaPath (after a Hugging Face login); then re-run the
+  image model per arm. Primary test: A1 LRT for the GigaPath image risk on the native tiles (arm E1).
+- Built `src/stage_q_encoders.py` (`tiles`, `gigapath`, `analyze`). The download/resume/MD5 code and the tiling
+  code are reused unchanged from `stage_c_pathology.py`; tile pixels are cached so any encoder can run later.
+- Tests (4 patients: 2 new, 2 original): every native tile set re-embedded with Phikon matched the saved
+  features (all tiles cosine ≥ 0.99999, same count) — including the 2 original patients whose tiles had to be
+  regenerated because their coordinates were never saved. TCGA-OL-A5RU has no pixel size in its header, so it
+  gets no 20× tiles (as specified). CPU time ~1 min per slide; the limit is GDC's ~0.27 MB/s per connection, so
+  the full run uses 12 parallel downloads (~1,037 GB, est. ~4 days).
+- Full run launched 2026-10-25 16:47 (`nohup caffeinate -i …`, log `data/logs/stage_q_tiles.log`).
+
+- 2026-11-03: the run had stopped after 59 of 1,026 patients (no finish message — most likely sleep or
+  power loss); paused at the researcher's request. Re-running resumes from patient 60.
+
+**Still to do:** user's Hugging Face login + Prov-GigaPath terms → `gigapath` → `analyze` → results here.

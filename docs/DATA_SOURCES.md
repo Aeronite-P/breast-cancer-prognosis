@@ -14,24 +14,34 @@ All data is public; no private or patient-identifiable data is used.
 ## 2. TCGA-BRCA — gene expression + clinical (genomics validation + multi-modal cohort)
 - **Access:** [cBioPortal](https://www.cbioportal.org/study?id=brca_tcga_pan_can_atlas_2018) REST API.
 - **Study ID:** `brca_tcga_pan_can_atlas_2018`
-- **Size:** ~1,000 patients. Small (CSV, MBs).
-- **Note:** Verify the exact expression-profile ID with `fetch_data.list_profiles()` before Stage C/D.
-- **Cite:** TCGA Network, *Nature* 2012; Hoadley et al., *Cell* 2018.
+- **Size:** 1,084 patients in the clinical table. Small (CSV, MBs).
+- **Includes** the TCGA Pan-Cancer Clinical Data Resource endpoints (overall survival, progression-free interval,
+  disease-specific survival), used as the main and sensitivity endpoints.
+- **Cite:** TCGA Network, *Nature* 2012; Hoadley et al., *Cell* 2018; Liu et al., *Cell* 2018 (endpoints).
 
 ## 3. BreakHis — histopathology images (imaging warm-up, Stage B)
 - **Access:** [Lab Visão Robótica e Imagem](https://web.inf.ufpr.br/vri/databases/breast-cancer-histopathological-database-breakhis/) — direct download `BreaKHis_v1.tar.gz` (~4 GB).
-- **Size:** 9,109 images (2,480 benign / 5,429 malignant), 82 patients, 700×460 PNG, 40–400× magnification.
+- **Size:** 7,909 images (2,480 benign / 5,429 malignant), 82 patients, 700×460 PNG, 40–400× magnification.
 - **Task:** benign vs. malignant classification (pipeline validation, NOT survival).
 - **Cite:** Spanhol et al., *IEEE TBME* 63(7):1455–1462, 2016. Non-commercial research use.
 
 ## 4. TCGA-BRCA — whole-slide H&E images (imaging survival + fusion, Stages C–D)
-- **Access:** [TCIA collection page](https://www.cancerimagingarchive.net/collection/tcga-brca/) and the [GDC Data Portal](https://portal.gdc.cancer.gov/). Diagnostic slides are open-access.
-- **Size:** 3,111 WSIs, ~1,098 patients. **Very large** — each slide is gigapixel (~1–4 GB);
-  the full set is hundreds of GB. **We download only a subset** and process on a cloud GPU.
+- **Access:** the NCI [Genomic Data Commons](https://portal.gdc.cancer.gov/) API (file list: `/files`; download:
+  `/data/<file_id>`). Diagnostic (FFPE) slides are open-access, no login.
+- **Size:** GDC lists 1,133 TCGA-BRCA diagnostic slides from 1,062 patients; one slide per patient was used for
+  the 1,033 analysed (~1 TB in total; each slide verified against GDC's size and MD5, then deleted after
+  feature extraction). Scanner magnification per slide was read from the slide headers (Amendment D5).
 - **Link to genes:** matched to study #2 by TCGA patient barcode (e.g., `TCGA-XX-XXXX`).
 - **Cite:** Clark et al., *J Digit Imaging* 2013 (TCIA); plus the TCGA-BRCA citations in #2.
 
-## 5. (Possible future) CPTAC-BRCA — external image validation
+## 5. Pretrained models (weights downloaded from Hugging Face)
+- **Phikon** (`owkin/phikon`, revision `057cc0295895c2df3dd7681a89680da6015cbefe`) — tile features. Pretrained
+  without labels on TCGA tissue tiles (Filiot et al., medRxiv 2023).
+- **Prov-GigaPath** (`prov-gigapath/prov-gigapath`) — Amendment E only; pretrained on Providence Health slides,
+  not TCGA (Xu et al., *Nature* 2024). Gated: needs a Hugging Face account and accepted terms.
+- Early stages only: ImageNet-pretrained ResNet / EfficientNet (torchvision / Keras).
+
+## 6. (Possible future) CPTAC-BRCA — external image validation
 - Considered for future external validation of the imaging model (another cohort with
   images + omics). Not yet used. [CPTAC on TCIA](https://www.cancerimagingarchive.net/).
 

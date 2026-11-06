@@ -99,8 +99,10 @@ def cohort_manifest():
 
 
 def results_checksums():
+    running = os.path.join(config.RESULTS_DIR, "fullcohort", "encoders")    # Amendment E: still running, not frozen
     files = sorted(f for f in glob.glob(os.path.join(config.RESULTS_DIR, "**", "*"), recursive=True)   # glob skips hidden
-                   if os.path.isfile(f) and not os.path.basename(f).startswith("."))                       # files like .DS_Store
+                   if os.path.isfile(f) and not os.path.basename(f).startswith(".")                        # files like .DS_Store
+                   and not f.startswith(running + os.sep))
     with open(os.path.join(OUT, "results_checksums.sha256"), "w") as f:
         for path in files:
             f.write(f"{sha256(path)}  {os.path.relpath(path, ROOT)}\n")

@@ -1,0 +1,4 @@
+group,n,deaths,percent_died,KM_5yr_survival
+below median,517,55,10.6,0.876
+above median,516,91,17.6,0.74
+"above vs below: HR [95% CI], log-rank p",1033,146,"HR 2.51 [1.80, 3.52]",p = 2.9e-08

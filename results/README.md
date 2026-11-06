@@ -7,8 +7,8 @@ Check them all with `shasum -a 256 -c reproducibility/results_checksums.sha256` 
 ## The two cohorts
 | Where | Cohort | Lab notebook |
 |---|---|---|
-| `results/` (top level) and `results/figures/fig2–fig6` | **n = 244**, size-matched case/control sample (50% deaths) — the July–September results | Entries 9–12 |
-| `results/fullcohort/` and `results/figures/fullcohort/` | **n = 1,033**, every eligible TCGA-BRCA patient (146 deaths, 39 hospitals) — the main study | Entries 13–16 |
+| `results/` (top level) and `results/figures/fig2–fig6` | **n = 244**, size-matched case/control sample (50% deaths) — the July–September results (clinical columns corrected 2026-10-21, Entry 17) | Entries 9–12, 17 |
+| `results/fullcohort/` and `results/figures/fullcohort/` | **n = 1,033**, every eligible TCGA-BRCA patient (146 deaths, 39 hospitals) — the main study | Entries 13–17 |
 
 ## Full cohort (`fullcohort/`)
 | File / folder | What it holds |
@@ -24,6 +24,7 @@ Check them all with `shasum -a 256 -c reproducibility/results_checksums.sha256` 
 | `added_value/` | Amendment A: beyond staging (A1), learned weights (A2), subgroups (A3), slide size (A4), time-AUC / Brier / decision curves (A5) |
 | `tissue/` | Amendment B: tile clusters, attention by cluster, tissue-composition test, cluster labels |
 | `followups/` | Amendment C: fat / non-tissue sub-clusters (C1), robustness (C2), gene SHAP (C3) |
+| `healthcheck/` | Pre-writing audit (Entry 17): H4 test, clinical-recompute checks, scan magnification per slide, Amendment D (D1–D5) |
 
 ## Figures (`figures/`)
 | Figure | Shows |

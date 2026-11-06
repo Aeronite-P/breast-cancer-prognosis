@@ -1,13 +1,13 @@
 model,split,c_index,ci_lo,ci_hi
-Clinical (age + TNM),random 5-fold,0.722,0.668,0.768
-Clinical (age + TNM),site-held-out,0.728,0.676,0.773
+Clinical (age + TNM),random 5-fold,0.733,0.683,0.776
+Clinical (age + TNM),site-held-out,0.74,0.69,0.785
 Genes (PAM50),random 5-fold,0.618,0.556,0.678
 Genes (PAM50),site-held-out,0.605,0.542,0.667
 Images (attention-MIL),random 5-fold,0.641,0.586,0.695
 Images (attention-MIL),site-held-out,0.64,0.586,0.692
 Genes + images,random 5-fold,0.661,0.605,0.715
 Genes + images,site-held-out,0.649,0.592,0.7
-Images + clinical,random 5-fold,0.734,0.682,0.78
-Images + clinical,site-held-out,0.724,0.673,0.769
-Genes + images + clinical,random 5-fold,0.724,0.67,0.771
-Genes + images + clinical,site-held-out,0.712,0.656,0.759
+Images + clinical,random 5-fold,0.739,0.692,0.783
+Images + clinical,site-held-out,0.734,0.684,0.777
+Genes + images + clinical,random 5-fold,0.731,0.68,0.776
+Genes + images + clinical,site-held-out,0.72,0.666,0.764

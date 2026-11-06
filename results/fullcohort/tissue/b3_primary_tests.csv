@@ -1,5 +1,5 @@
 test,LR_chi2,df,p_LRT,HR_image_per_SD,HR_lo,HR_hi,penalizer
-+ image vs clinical + composition (k=8)  [PRIMARY],9.17,1,0.0024668100504023423,1.29,1.1,1.52,0.0
-+ composition (k=8) vs clinical + image  [secondary b],11.18,7,0.1309631504120956,,,,0.0
-+ image vs clinical + composition (k=12)  [sensitivity],8.26,1,0.004054917534639262,1.28,1.09,1.51,0.0
-"reference: + image vs clinical only (A1, Entry 14)",17.75,1,2.5206273404346562e-05,1.4,1.2,1.62,0.0
++ image vs clinical + composition (k=8)  [PRIMARY],10.02,1,0.0015500572085775752,1.31,1.11,1.53,0.0
++ composition (k=8) vs clinical + image  [secondary b],15.93,7,0.02573979074265661,,,,0.0
++ image vs clinical + composition (k=12)  [sensitivity],8.76,1,0.003078815940826982,1.29,1.09,1.52,0.0
+"reference: + image vs clinical only (A1, Entry 14)",19.0,1,1.3104518466128528e-05,1.41,1.22,1.64,0.0

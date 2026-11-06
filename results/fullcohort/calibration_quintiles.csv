@@ -1,21 +1,21 @@
 model,horizon_months,quintile,n,predicted,observed,obs_lo,obs_hi
-Clinical (age + TNM),36,1,207,0.8,0.762,0.675,0.829
-Clinical (age + TNM),36,2,206,0.89,0.901,0.828,0.944
-Clinical (age + TNM),36,3,208,0.915,0.941,0.884,0.971
-Clinical (age + TNM),36,4,205,0.932,0.931,0.866,0.965
-Clinical (age + TNM),36,5,207,0.951,0.953,0.898,0.979
-Genes + images + clinical,36,1,207,0.755,0.753,0.659,0.825
-Genes + images + clinical,36,2,206,0.88,0.888,0.814,0.934
-Genes + images + clinical,36,3,207,0.92,0.928,0.857,0.964
-Genes + images + clinical,36,4,206,0.941,0.945,0.887,0.974
-Genes + images + clinical,36,5,207,0.962,0.953,0.904,0.978
-Clinical (age + TNM),60,1,207,0.651,0.586,0.466,0.688
-Clinical (age + TNM),60,2,206,0.793,0.796,0.689,0.87
-Clinical (age + TNM),60,3,207,0.838,0.862,0.771,0.918
-Clinical (age + TNM),60,4,207,0.869,0.887,0.798,0.939
-Clinical (age + TNM),60,5,206,0.906,0.915,0.833,0.958
-Genes + images + clinical,60,1,207,0.57,0.602,0.475,0.708
-Genes + images + clinical,60,2,206,0.769,0.781,0.671,0.857
-Genes + images + clinical,60,3,207,0.842,0.826,0.718,0.896
-Genes + images + clinical,60,4,206,0.882,0.864,0.769,0.922
-Genes + images + clinical,60,5,207,0.923,0.927,0.862,0.962
+Clinical (age + TNM),36,1,207,0.778,0.745,0.656,0.815
+Clinical (age + TNM),36,2,206,0.885,0.9,0.827,0.944
+Clinical (age + TNM),36,3,207,0.917,0.932,0.871,0.965
+Clinical (age + TNM),36,4,206,0.939,0.943,0.883,0.973
+Clinical (age + TNM),36,5,207,0.961,0.967,0.914,0.987
+Genes + images + clinical,36,1,207,0.754,0.755,0.663,0.825
+Genes + images + clinical,36,2,206,0.878,0.871,0.787,0.923
+Genes + images + clinical,36,3,207,0.918,0.935,0.871,0.968
+Genes + images + clinical,36,4,206,0.942,0.933,0.873,0.965
+Genes + images + clinical,36,5,207,0.963,0.971,0.925,0.989
+Clinical (age + TNM),60,1,207,0.609,0.589,0.47,0.69
+Clinical (age + TNM),60,2,206,0.783,0.799,0.696,0.869
+Clinical (age + TNM),60,3,207,0.838,0.895,0.809,0.943
+Clinical (age + TNM),60,4,207,0.88,0.845,0.745,0.908
+Clinical (age + TNM),60,5,206,0.923,0.925,0.845,0.964
+Genes + images + clinical,60,1,207,0.566,0.607,0.481,0.711
+Genes + images + clinical,60,2,206,0.764,0.781,0.669,0.859
+Genes + images + clinical,60,3,207,0.838,0.818,0.71,0.889
+Genes + images + clinical,60,4,206,0.883,0.873,0.787,0.926
+Genes + images + clinical,60,5,207,0.925,0.926,0.854,0.963

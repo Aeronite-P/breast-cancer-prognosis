@@ -1,7 +1,7 @@
 model,horizon_months,brier
 No model (everyone gets the overall survival rate),36,0.0897
-Clinical (age + TNM),36,0.0856
-Genes + images + clinical,36,0.082
+Clinical (age + TNM),36,0.0834
+Genes + images + clinical,36,0.0818
 No model (everyone gets the overall survival rate),60,0.1489
-Clinical (age + TNM),60,0.1382
-Genes + images + clinical,60,0.1321
+Clinical (age + TNM),60,0.136
+Genes + images + clinical,60,0.1322

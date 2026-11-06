@@ -93,6 +93,39 @@ _(Record any change from this plan, with date and reason.)_
   B4 waits for GDC._
 - _2026-10-04 — Amendment C (§14: fat inside cluster 2, robustness checks, gene explanations) written
   before any of its analyses was run._
+- _2026-10-21 — Health check before writing found that **H4 (the original primary) was never formally
+  tested on the full cohort** (Entry 13 compared every model with clinical only). It is run now exactly
+  as §7 specified, before looking at it: fusion = the equal-weight genes + images score used throughout;
+  best single modality = images (random 5-fold C 0.641 vs genes 0.618, Entry 13); paired-bootstrap ΔC
+  (2,000 resamples, seed 42) with 95% CI, two-sided p and P(not better), plus the likelihood-ratio test
+  for adding gene risk to a Cox model on image risk (1 df). Site-held-out risks as sensitivity. Reported
+  whatever the result. Code: `src/stage_p_healthcheck.py h4`._
+- _2026-10-21 — Amendment D (§15: other endpoints, fresh patients only, PAM50 adjustment) written
+  before any of its analyses was run._
+- _2026-10-21 — **Bug found and fixed: AJCC stage parsing.** `stage_h_clinical.load_clinical()` matched only
+  labels written exactly "STAGE I/II/III/IV"; every sub-stage (IA, IIA, IIB, IIIA, IIIB, IIIC …) became missing
+  and was median-imputed to stage I. In the 1,033: 1,007 patients ended up as stage 1, 6 as 2, 2 as 3, 18 as 4
+  (correct: 172 / 591 / 234 / 18, 18 unknown — Table 1 used separate, correct code). The clinical model
+  therefore had age, T, N and in effect a stage-IV flag. Fixed (sub-stage letters allowed); the parsed counts
+  now equal Table 1. **Every analysis that uses the clinical variables is re-run with methods otherwise
+  unchanged** (same folds, seeds, imputation, models); image and gene risks do not use stage and are not
+  re-trained. Before the fix, a recomputation of every cached clinical risk column reproduced the saved values
+  (max |difference| ≤ 4.4e-16; `healthcheck/clinical_recompute_verify.csv`). Pre-fix results stay in git commit
+  b8b8fce and are listed next to the corrected ones in LAB_NOTEBOOK Entry 17. Amendment D is run after the fix._
+- _2026-10-21 — **Clinical baseline (logged late; the change itself dates from Stage H, July).** H5 and §5 named
+  age, grade, stage, ER/HER2 and nodal status. The TCGA-BRCA clinical export used here
+  (cBioPortal `brca_tcga_pan_can_atlas_2018`, 41 columns, checked 2026-10-21) has **no tumor-grade and no
+  ER/PR/HER2 field**, so the clinical model is age + AJCC stage + T + N (§5 allowed the final list to be fixed
+  after EDA). PAM50 subtype is the closest available stand-in for receptor status and is tested as an
+  adjustment in Amendment D3. Also noted: clinical medians for imputation were computed on all patients
+  before the folds (outcome-free; 18 unknown stage) — a small departure from §8 "no test data touches
+  preprocessing", left unchanged so results stay comparable._
+- _2026-10-21 — **Tile magnification documented wrongly.** Code comments, README and Table S1 say tiles were cut
+  at ~20× (downsample 2). `get_best_level_for_downsample(2)` returns level 0 on these slides, so every tile was
+  read at full scan resolution (224 px at level 0, confirmed in all 789 saved coordinate files; the original
+  244 used the same code). Documentation is corrected; scan magnification is checked as Amendment D5._
+- _2026-10-25 — Amendment E (§16: non-TCGA foundation model and true-20× tiles) written before any of
+  its analyses was run._
 
 ## 12. Amendment A — follow-up analyses (2026-10-02, written BEFORE running them)
 **Why:** after Entry 13, the risk is fishing for a positive result. These analyses, and only these,
@@ -203,3 +236,93 @@ empty), so each fold model's gene weights give exact SHAP values: SHAP(patient, 
 (expression − mean). Re-train the five gene fold models (checked against the cached gene risks), compute
 out-of-fold SHAP values, and report each gene's mean |SHAP|, direction (higher expression → higher or
 lower risk) and how many of the 5 folds agree on the direction. Descriptive only — no significance claims.
+
+## 15. Amendment D — endpoint, fresh-patient and subtype checks of A1 (2026-10-21, written BEFORE running)
+**Why:** the 2026-10-21 health check raised three reviewer-level concerns about A1 (image risk beyond
+age + stage + T + N): (i) TCGA's clinical-data guide (Liu et al., *Cell* 2018) advises caution with
+overall survival for BRCA (short follow-up), and only 79 of the 146 deaths are recorded as "dead with
+tumor"; (ii) the image method and fusion design were chosen while looking at the original 244 patients,
+who hold 123 of the 146 deaths, so the full-cohort result is not a fully fresh test; (iii) tumor grade and
+ER/PR/HER2 are not in this dataset, so the clinical baseline lacks them. No model is re-trained: every
+check reuses existing image risks (trained on overall survival). The only new inputs are the TCGA-CDR
+endpoints already in `data/raw/tcga_clinical.csv` and the PAM50 labels already used in Table 1. Event
+counts below were looked up before writing this (descriptive only; no model output was looked at).
+Code: `src/stage_p_healthcheck.py amendment-d`. Every result is reported whatever its direction.
+
+**D1 — Other endpoints (primary for this amendment).** Repeat A1 exactly (Model 0 = age, AJCC stage, T, N,
+same median imputation; Model 1 = Model 0 + z-scored random-5-fold image risk; LRT 1 df; HR per SD) with
+(a) **progression-free interval** (`PFS_MONTHS`, `PFS_STATUS` = "1:PROGRESSION"; n = 1,033, 139 events) —
+**primary: LRT for the image risk, α = 0.05**; (b) disease-specific survival (`DSS_MONTHS`, `DSS_STATUS` =
+"1:DEAD WITH TUMOR"; patients with missing status excluded; n = 1,014, 79 events). Also reported for each
+endpoint: C-index of the clinical risk and the image risk (descriptive). Durations of 0 are kept.
+
+**D2 — Patients not used to choose the methods (the 789 new; 23 deaths, 58 progression events).**
+A1 refit within the 789 (Model 0 refit on them; 5 covariates with 23 deaths is thin and is stated as such),
+using (a) the **frozen image risk** (model trained on the 244 only, `frozen_preds.csv`; z-scored within the
+789) — overall survival and progression-free interval; (b) the random-5-fold out-of-fold image risk
+restricted to the 789 — overall survival. Interpretation is by the HR and its 95% CI; with 23 deaths a
+non-significant p is **not** evidence of no effect, and a significant one is not required.
+
+**D3 — PAM50 subtype as a stand-in for receptor status.** A1 with PAM50 subtype (dummy-coded, LumA =
+reference; LumB, Basal, Her2, Normal, Unknown) added to both Model 0 and Model 1; LRT for the image risk
+(overall survival). Also reported: LRT for subtype added to Model 0 (descriptive).
+
+**D4 — Plain-language summary (descriptive).** Share of patients who died, and Kaplan-Meier 5-year overall
+survival, for below- vs above-median random-5-fold image risk; log-rank p and HR for the median split.
+
+**D5 — Scan magnification (added 2026-10-21, before any D result was seen).** The health check found that
+every tile was read at level 0 (full scan resolution; `get_best_level_for_downsample(2)` returns level 0 on
+these slides), not ~20× as documented, so 40×-scanned slides gave ~0.25 µm/px tiles and 20×-scanned slides
+~0.5 µm/px. Scanner magnification (Aperio `AppMag`) and µm/px are read from each exact slide's header on GDC
+(a few small byte-range requests; `healthcheck/scan_magnification.csv`); ambiguous or unreadable slides =
+"unknown". Reported: counts and deaths per magnification; image risk by magnification (difference in means,
+Mann-Whitney p; descriptive); **A1 with magnification group added to both models (categorical; LRT for the
+image risk)**; image C-index within each group with ≥ 30 deaths (descriptive). Same interpretation rule as
+D1(a) and D3.
+
+**Correction before any D result was seen (2026-10-21):** the first run stopped on missing data before
+printing anything: TCGA-OL-A66H has a PFI/DSS status but no PFI/DSS time. Patients missing an endpoint's
+time are excluded from that endpoint (PFI n = 1,032, 139 events; DSS n = 1,013, 79 events; the frozen
+PFI analysis in D2 likewise). Event counts are unchanged.
+
+**Interpretation rule (fixed now):** D1–D3 and D5 are sensitivity checks of A1, not new primaries; no multiplicity
+correction. If the image HR stays > 1 with a 95% CI excluding 1 under D1(a), D3 and D5, A1 is described as
+robust to these concerns. If not, the paper reports A1 as sensitive to that choice, prominently. D2 is
+reported by HR and CI only. **No other variants will be tried in response to these results.**
+
+## 16. Amendment E — does the image signal depend on Phikon's TCGA pretraining or on tile resolution? (2026-10-25, written BEFORE running)
+**Why:** the health check (Entry 17) found (i) Phikon was pretrained, without labels, on TCGA-BRCA diagnostic
+slides that almost certainly include ≥ 1,031 of our 1,033 patients, and (ii) tiles were cut at full scan
+resolution (~0.25 µm/px on the 900 40× scans), not the ~0.5 µm/px (20×) Phikon was trained on. Both can only be
+tested by re-reading the slides. Code: `src/stage_q_encoders.py`. Every result is reported whatever its direction.
+
+**Patients.** The 1,026 patients whose exact slide is known (manifest `slide_status == exact`); the 7 ambiguous
+patients are excluded. Slides are re-downloaded from GDC and must match GDC's size and MD5; a patient whose slide
+cannot be obtained or verified is excluded and listed. All arms below — including the Phikon reference — are
+re-run on exactly the same final patient set, with KFold(5, shuffle, seed 42) over the patients sorted by ID.
+
+**Tile sets.** *Native* (= the tiles analysed so far): for the 789 new patients, the saved level-0 coordinates;
+for the original 237, regenerated with the unchanged tiling code (same grid, seeded order, tissue filter, ≤ 200
+tiles). **Check:** Phikon re-embedding of every regenerated native tile set must match the saved features
+(every tile cosine ≥ 0.999, same tile count); a patient failing it is excluded from all arms and listed.
+*20×*: the same grid/seed/filter/≤ 200 rule applied at a target of 0.5 µm/px — a level-0 region of
+round(224 × 0.5 / mpp) px resized to 224 × 224 (PIL Lanczos), mpp from the slide header (`openslide.mpp-x`);
+patients without mpp are excluded from the 20× arms only. Tile pixels are cached (uint8) so encoders run later.
+
+**Encoders.** Phikon (unchanged revision) and **Prov-GigaPath** tile encoder (`prov-gigapath/prov-gigapath`,
+pretrained on Providence Health slides, not TCGA), with the preprocessing documented on its model card
+(resize 256 bicubic → centre-crop 224 → ImageNet normalisation); 1,536-number embedding per tile.
+
+**Arms (image model = attention-MIL with every setting unchanged; only the input size follows the encoder):**
+- **E1 (primary): GigaPath on the native tiles** — isolates the encoder / pretraining data.
+- E0 (reference): Phikon on the native tiles (saved features) — the current model on the same patients.
+- E2a: Phikon on 20× tiles — isolates tile resolution. E2b: GigaPath on 20× tiles.
+
+**Tests.** For each arm: out-of-fold C-index (random 5-fold, and site-held-out GroupKFold) with bootstrap CI;
+**A1 likelihood-ratio test for the image risk beyond age + stage + T + N (corrected coding), HR per SD with 95% CI
+— E1's is the primary test of this amendment, α = 0.05**; the same test for progression-free interval; Spearman
+correlation of each arm's risk with E0's.
+**Interpretation rule (fixed now):** if E1's image HR > 1 with a 95% CI excluding 1, the image signal is described
+as not dependent on a TCGA-pretrained encoder. If not, the paper states prominently that the Phikon result may
+depend on its exposure to these slides (or on the encoder). E2a/E2b are reported as resolution checks, same rule.
+**No other encoders, settings or tile rules will be tried in response to these results.**

@@ -3,7 +3,7 @@
 | Part | Setting | Value |
 |---|---|---|
 | Slides | Diagnostic H&E slide per patient | smallest if several (full run); GDC download, MD5-verified |
-| Tiles | Size / magnification | 224 × 224 px at downsample 2 (~20× on 40× scans) |
+| Tiles | Size / magnification | 224 × 224 px read at level 0 = full scan resolution (scanner 40× for 900 slides, 20× for 119, unknown 14; intended ~20× was not applied — see PREREGISTRATION §11) |
 | Tiles | Tissue filter | HSV saturation mean > 25 and value mean < 235 |
 | Tiles | Number per patient | up to 200, taken in a fixed random order (seed 0) |
 | Features | Model | Phikon (owkin/phikon, ViT), CLS token, 768 numbers per tile |

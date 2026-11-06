@@ -1,0 +1,5 @@
+group,n,deaths,mean_z_image_risk,C_image_within
+20x,119.0,11.0,0.137,
+40x,900.0,133.0,-0.013,0.632
+unknown,14.0,2.0,-0.312,
+"40x vs 20x image risk, Mann-Whitney p",,,0.07856377443226592,

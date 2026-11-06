@@ -1,0 +1,4 @@
+endpoint,n,events,LR_chi2,p_LRT,HR_per_SD,HR_lo,HR_hi,C_clinical,C_image
+overall survival (A1 reference),1033,146,19.0,1.3104518444424112e-05,1.41,1.22,1.64,0.733,0.641
+progression-free interval [D1 PRIMARY],1032,139,8.11,0.004414155575264183,1.26,1.08,1.48,0.659,0.613
+disease-specific survival,1013,79,15.56,8.011513684924949e-05,1.52,1.24,1.85,0.736,0.679

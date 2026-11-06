@@ -1,5 +1,5 @@
 model,delta_vs_clinical,lo,hi,p_not_better
-Genes (PAM50),-0.021,-0.093,0.052,0.709
-Images (attention-MIL),-0.03,-0.114,0.053,0.75
-Genes + images,0.007,-0.07,0.084,0.433
-Genes + images + clinical,0.034,-0.017,0.086,0.109
+Genes (PAM50),-0.053,-0.125,0.022,0.919
+Images (attention-MIL),-0.062,-0.137,0.017,0.945
+Genes + images,-0.025,-0.094,0.048,0.748
+Genes + images + clinical,0.017,-0.032,0.064,0.251

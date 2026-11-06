@@ -28,4 +28,11 @@ tools/
 
 # Personal, local-only files (study notes, exported decks) — never published
 personal/
-.DS_Store
+
+# Amendment E: cached tiles, features and partial slides (large; regenerable)
+data/stage_q_tiles/
+data/stage_q_feats/
+data/stage_q_tmp/
+
+# Amendment E results: published once the run is finished (still changing)
+results/fullcohort/encoders/

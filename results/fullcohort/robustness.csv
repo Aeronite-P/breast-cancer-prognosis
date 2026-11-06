@@ -1,13 +1,13 @@
 check,c_index
-shuffled labels: Clinical (age + TNM),0.478
+shuffled labels: Clinical (age + TNM),0.485
 shuffled labels: Genes (PAM50),0.566
 shuffled labels: Images (attention-MIL),0.503
 shuffled labels: Genes + images,0.536
-shuffled labels: Images + clinical,0.493
-shuffled labels: Genes + images + clinical,0.528
-seed 42: full model,0.724
-seed 1: full model,0.705
-seed 7: full model,0.712
-seed 123: full model,0.715
-seed 2024: full model,0.717
-full model across 5 seeds (mean ± sd),0.715 ± 0.006
+shuffled labels: Images + clinical,0.488
+shuffled labels: Genes + images + clinical,0.524
+seed 42: full model,0.731
+seed 1: full model,0.715
+seed 7: full model,0.72
+seed 123: full model,0.721
+seed 2024: full model,0.726
+full model across 5 seeds (mean ± sd),0.723 ± 0.005

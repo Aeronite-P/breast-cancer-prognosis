@@ -1,5 +1,5 @@
 model,c_index,ci_lo,ci_hi,delta_vs_clinical,delta_lo,delta_hi,p_two_sided
-Clinical (age + TNM),0.722,0.668,0.768,,,,
-Equal-weight: genes + images + clinical,0.724,0.67,0.771,0.003,-0.037,0.044,0.878
-Stacked: genes + images + clinical,0.738,0.685,0.783,0.017,-0.011,0.045,0.214
-Stacked: images + clinical,0.737,0.686,0.783,0.016,-0.011,0.043,0.26
+Clinical (age + TNM),0.733,0.683,0.776,,,,
+Equal-weight: genes + images + clinical,0.731,0.68,0.776,-0.001,-0.041,0.04,0.957
+Stacked: genes + images + clinical,0.748,0.702,0.787,0.016,-0.005,0.036,0.132
+Stacked: images + clinical,0.746,0.7,0.788,0.014,-0.005,0.035,0.178

@@ -1,4 +1,4 @@
 analysis,LR_chi2,p_LRT,HR_per_SD,HR_lo,HR_hi
-+ image vs clinical only [random 5-fold image risk (primary)],17.75,2.5206273404346562e-05,1.4,1.2,1.62
-+ gene vs clinical + image (secondary),4.03,0.04474658798294828,1.18,1.01,1.4
-+ image vs clinical only [site-held-out image risk (sensitivity)],7.94,0.004844782917956954,1.28,1.08,1.51
++ image vs clinical only [random 5-fold image risk (primary)],19.0,1.3104518466128528e-05,1.41,1.22,1.64
++ gene vs clinical + image (secondary),2.52,0.11242700451644988,1.14,0.97,1.35
++ image vs clinical only [site-held-out image risk (sensitivity)],7.52,0.006097056264476251,1.27,1.08,1.49
